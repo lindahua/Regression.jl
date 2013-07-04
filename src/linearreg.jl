@@ -26,6 +26,29 @@ function llsq_qrlq{T<:FloatingPoint}(x::Matrix{T}, y::Matrix{T}; by_columns::Boo
 	end
 end
 
+function wllsq_qrlq{T<:FloatingPoint}(x::Matrix{T}, y::Vector{T}, w::Vector{T}; by_columns::Bool=false, bias::Bool=false)
+	sqw = sqrt(w)
+	if by_columns
+		xw = bmultiply(x, sqw, 2)
+		gels!('T', bias ? vcat(xw, sqw') : xw, y .* sqw)[2]
+	else
+		xw = bmultiply(x, sqw, 1)
+		gels!('N', bias ? hcat(xw, sqw) : xw, y .* sqw)[2]
+	end
+end
+
+function wllsq_qrlq{T<:FloatingPoint}(x::Matrix{T}, y::Matrix{T}, w::Vector{T}; by_columns::Bool=false, bias::Bool=false)
+	sqw = sqrt(w)
+	if by_columns
+		xw = bmultiply(x, sqw, 2)
+		gels!('T', bias ? vcat(xw, sqw') : xw, bmultiply(y', sqw, 2))[2]
+	else
+		xw = bmultiply(x, sqw, 1)
+		gels!('N', bias ? hcat(xw, sqw) : xw, bmultiply(y, sqw, 1))[2]
+	end
+end
+
+
 # orth & svd
 
 for (fun, lapackfun!) in [(:llsq_orth, :gelsy!), (:llsq_svd, :gelsd!)]
@@ -62,23 +85,28 @@ default_rcond{T<:FloatingPoint}(x::Matrix{T}) = eps(convert(T, length(x)))
 
 function linearreg_lsq{T<:FloatingPoint}(
 	x::Matrix{T}, 
-	y::Vector{T}; 
+	y::VecOrMat{T}; 
 	method::Symbol=:qrlq, 
 	by_columns::Bool=false,
 	bias::Bool=false,
+	weights::Union(Vector{T},Nothing)=nothing,
 	rcond::T=-one(T))
 
-	if rcond < 0
-		rcond = default_rcond(x)
-	end
+	no_weights = weights == nothing
 
 	if method == :qrlq
-		llsq_qrlq(x, y; by_columns=by_columns, bias=bias)
+		if no_weights
+			llsq_qrlq(x, y; by_columns=by_columns, bias=bias)
+		else
+			wllsq_qrlq(x, y, weights; by_columns=by_columns, bias=bias)
+		end
 
 	elseif method == :orth
+		if rcond < 0 rcond = default_rcond(x) end
 		llsq_orth(x, y, rcond; by_columns=by_columns, bias=bias)
 
 	elseif method == :svd
+		if rcond < 0 rcond = default_rcond(x) end
 		llsq_svd(x, y, rcond; by_columns=by_columns, bias=bias)
 
 	else
@@ -86,29 +114,4 @@ function linearreg_lsq{T<:FloatingPoint}(
 	end
 end
 
-function linearreg_lsq{T<:FloatingPoint}(
-	x::Matrix{T}, 
-	y::Matrix{T}; 
-	method::Symbol=:qrlq, 
-	by_columns::Bool=false,
-	bias::Bool=false,
-	rcond::T=-one(T))
-
-	if rcond < 0
-		rcond = default_rcond(x)
-	end
-
-	if method == :qrlq
-		llsq_qrlq(x, y; by_columns=by_columns, bias=bias)
-
-	elseif method == :orth
-		llsq_orth(x, y, rcond; by_columns=by_columns, bias=bias)
-
-	elseif method == :svd
-		llsq_svd(x, y, rcond; by_columns=by_columns, bias=bias)
-
-	else
-		throw(ArgumentError("Invalid method for linearreg_lsq."))
-	end
-end
 

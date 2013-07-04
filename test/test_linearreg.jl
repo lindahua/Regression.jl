@@ -12,10 +12,15 @@ for m in [:qrlq, :orth, :svd]
 	# by rows
 
 	a = randn(5, 3)
+	w = rand(5)
 	b = randn(3)
 	x = a * b
 
 	r = linearreg_lsq(a, x; method=m, by_columns=false)
+	@test size(r) == size(b)
+	@test_approx_eq r b
+
+	r = linearreg_lsq(a, x; method=m, by_columns=false, weights=w)
 	@test size(r) == size(b)
 	@test_approx_eq r b
 
@@ -26,6 +31,10 @@ for m in [:qrlq, :orth, :svd]
 	@test size(r) == size(b)
 	@test_approx_eq r b
 
+	r = linearreg_lsq(a, x; method=m, by_columns=false, bias=true, weights=w)
+	@test size(r) == size(b)
+	@test_approx_eq r b
+
 	b = randn(3, 4)
 	x = a * b
 
@@ -33,10 +42,18 @@ for m in [:qrlq, :orth, :svd]
 	@test size(r) == size(b)
 	@test_approx_eq r b
 
+	r = linearreg_lsq(a, x; method=m, by_columns=false, weights=w)
+	@test size(r) == size(b)
+	@test_approx_eq r b
+
 	b = randn(4, 4)
 	x = a * b[1:3, :] .+ b[4, :]
 
 	r = linearreg_lsq(a, x; method=m, by_columns=false, bias=true)
+	@test size(r) == size(b)
+	@test_approx_eq r b
+
+	r = linearreg_lsq(a, x; method=m, by_columns=false, bias=true, weights=w)
 	@test size(r) == size(b)
 	@test_approx_eq r b
 
