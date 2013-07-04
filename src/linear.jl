@@ -1,23 +1,82 @@
 # Linear regression
 
+import Base.LinAlg.LAPACK.gels!
+import Base.LinAlg.LAPACK.gelsy!
+import Base.LinAlg.LAPACK.gelsd!
 
 #################################################
 #
-#  Least square regression
+#  Linear least square
 #
 #################################################
 
-function ordinary_least_squares(x::Matrix{Float64}, y::Vector{Float64})
-	H = gemm('N', 'T', 1.0, x, x)
-	g = gemv('N', 1.0, x, y)
-	cholfact!(H) \ g
+function llsq{T<:FloatingPoint}(
+	x::Matrix{T}, 
+	y::Vector{T}; 
+	method::Symbol=:qrlq, 
+	by_columns::Bool=false,
+	rcond::T=-one(T))
+
+	if rcond < 0
+		rcond = eps(convert(T, length(x)))
+	end
+
+	if method == :qrlq
+		gels!(by_columns ? 'T' : 'N', copy(x), copy(y))[2]
+
+	elseif method == :orth
+		if by_columns
+			gelsy!(x', copy(y), rcond)[1]
+		else
+			gelsy!(copy(x), copy(y), rcond)[1]
+		end
+
+	elseif method == :svd
+		if by_columns
+			gelsd!(x', copy(y), rcond)[1]
+		else
+			gelsd!(copy(x), copy(y), rcond)[1]
+		end
+
+	else
+		throw(ArgumentError("Invalid method for llsq."))
+	end
 end
 
-function ordinary_least_squares(x::Matrix{Float64}, y::Matrix{Float64})
-	H = gemm('N', 'T', 1.0, x, x)
-	g = gemm('N', 'T', 1.0, x, y)
-	cholfact!(H) \ g	
+function llsq{T<:FloatingPoint}(
+	x::Matrix{T}, 
+	y::Matrix{T}; 
+	method::Symbol=:qrlq, 
+	by_columns::Bool=false,
+	rcond::T=-one(T))
+
+	if rcond < 0
+		rcond = eps(convert(T, length(x)))
+	end
+
+	if method == :qrlq
+		if by_columns
+			gels!('T', copy(x), y')[2]
+		else
+			gels!('N', copy(x), copy(y))[2]
+		end
+
+	elseif method == :orth
+		if by_columns
+			gelsy!(x', y', rcond)[1]
+		else
+			gelsy!(copy(x), copy(y), rcond)[1]
+		end
+
+	elseif method == :svd
+		if by_columns
+			gelsd!(x', y', rcond)[1]
+		else
+			gelsd!(copy(x), copy(y), rcond)[1]
+		end
+
+	else
+		throw(ArgumentError("Invalid method for llsq."))
+	end
 end
-
-
 

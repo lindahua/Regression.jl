@@ -4,9 +4,11 @@ module Regression
 
 	export
 
-	# linear
-	ordinary_least_squares
+	# common
+	append_zeros, append_ones,
 
+	# linear
+	llsq
 
 	# sources
 
