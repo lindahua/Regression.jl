@@ -34,7 +34,7 @@ for (fun, lapackfun!) in [(:llsq_orth, :gelsy!), (:llsq_svd, :gelsd!)]
 		by_columns::Bool=false, bias::Bool=false)
 
 		if by_columns
-			($lapackfun!)(bias ? append_ones(x', 1) : x', copy(y), rcond)[1]
+			($lapackfun!)(bias ? append_ones(x', 2) : x', copy(y), rcond)[1]
 		else
 			($lapackfun!)(bias ? append_ones(x, 2) : copy(x), copy(y), rcond)[1]
 		end
@@ -44,7 +44,7 @@ for (fun, lapackfun!) in [(:llsq_orth, :gelsy!), (:llsq_svd, :gelsd!)]
 		by_columns::Bool=false, bias::Bool=false)
 
 		if by_columns
-			($lapackfun!)(bias ? append_ones(x', 1) : x', y', rcond)[1]
+			($lapackfun!)(bias ? append_ones(x', 2) : x', y', rcond)[1]
 		else
 			($lapackfun!)(bias ? append_ones(x, 2) : copy(x), copy(y), rcond)[1]
 		end
