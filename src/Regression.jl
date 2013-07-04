@@ -9,7 +9,7 @@ module Regression
 
 	# linear
 	llsq_qrlq, wllsq_qrlq, llsq_orth, wllsq_orth, llsq_svd, wllsq_svd,
-	linearreg_lsq
+	linearreg_lsq, ridgereg
 
 	# sources
 
