@@ -26,39 +26,28 @@ function llsq_qrlq{T<:FloatingPoint}(x::Matrix{T}, y::Matrix{T}; by_columns::Boo
 	end
 end
 
-# orth
+# orth & svd
 
-function llsq_orth{T<:FloatingPoint}(x::Matrix{T}, y::Vector{T}, rcond::T; by_columns::Bool=false, bias::Bool=false)
-	if by_columns
-		gelsy!(bias ? append_ones(x', 1) : x', copy(y), rcond)[1]
-	else
-		gelsy!(bias ? append_ones(x, 2) : copy(x), copy(y), rcond)[1]
+for (fun, lapackfun!) in [(:llsq_orth, :gelsy!), (:llsq_svd, :gelsd!)]
+
+	@eval function ($fun){T<:FloatingPoint}(x::Matrix{T}, y::Vector{T}, rcond::T; 
+		by_columns::Bool=false, bias::Bool=false)
+
+		if by_columns
+			($lapackfun!)(bias ? append_ones(x', 1) : x', copy(y), rcond)[1]
+		else
+			($lapackfun!)(bias ? append_ones(x, 2) : copy(x), copy(y), rcond)[1]
+		end
 	end
-end
 
-function llsq_orth{T<:FloatingPoint}(x::Matrix{T}, y::Matrix{T}, rcond::T; by_columns::Bool=false, bias::Bool=false)
-	if by_columns
-		gelsy!(bias ? append_ones(x', 1) : x', y', rcond)[1]
-	else
-		gelsy!(bias ? append_ones(x, 2) : copy(x), copy(y), rcond)[1]
-	end
-end
+	@eval function ($fun){T<:FloatingPoint}(x::Matrix{T}, y::Matrix{T}, rcond::T; 
+		by_columns::Bool=false, bias::Bool=false)
 
-# svd
-
-function llsq_svd{T<:FloatingPoint}(x::Matrix{T}, y::Vector{T}, rcond::T; by_columns::Bool=false, bias::Bool=false)
-	if by_columns
-		gelsd!(bias ? append_ones(x', 1) : x', copy(y), rcond)[1]
-	else
-		gelsd!(bias ? append_ones(x, 2) : copy(x), copy(y), rcond)[1]
-	end
-end
-
-function llsq_svd{T<:FloatingPoint}(x::Matrix{T}, y::Matrix{T}, rcond::T; by_columns::Bool=false, bias::Bool=false)
-	if by_columns
-		gelsd!(bias ? append_ones(x', 1) : x', y', rcond)[1]
-	else
-		gelsd!(bias ? append_ones(x, 2) : copy(x), copy(y), rcond)[1]
+		if by_columns
+			($lapackfun!)(bias ? append_ones(x', 1) : x', y', rcond)[1]
+		else
+			($lapackfun!)(bias ? append_ones(x, 2) : copy(x), copy(y), rcond)[1]
+		end
 	end
 end
 
