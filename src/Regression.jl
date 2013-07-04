@@ -8,11 +8,12 @@ module Regression
 	append_zeros, append_ones,
 
 	# linear
-	llsq
+	llsq_qrlq, wllsq_qrlq, llsq_orth, wllsq_orth, llsq_svd, wllsq_svd,
+	linearreg_lsq
 
 	# sources
 
 	include("common.jl")
-	include("linear.jl")
+	include("linearreg.jl")
 end
 
