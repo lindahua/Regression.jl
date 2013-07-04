@@ -41,7 +41,7 @@ function wllsq_qrlq{T<:FloatingPoint}(x::Matrix{T}, y::Matrix{T}, w::Vector{T}; 
 	sqw = sqrt(w)
 	if by_columns
 		xw = bmultiply(x, sqw, 2)
-		gels!('T', bias ? vcat(xw, sqw') : xw, bmultiply(y', sqw, 2))[2]
+		gels!('T', bias ? vcat(xw, sqw') : xw, bmultiply(y', sqw, 1))[2]
 	else
 		xw = bmultiply(x, sqw, 1)
 		gels!('N', bias ? hcat(xw, sqw) : xw, bmultiply(y, sqw, 1))[2]
@@ -51,7 +51,7 @@ end
 
 # orth & svd
 
-for (fun, lapackfun!) in [(:llsq_orth, :gelsy!), (:llsq_svd, :gelsd!)]
+for (fun, wfun, lapackfun!) in [(:llsq_orth, :wllsq_orth, :gelsy!), (:llsq_svd, :wllsq_svd, :gelsd!)]
 
 	@eval function ($fun){T<:FloatingPoint}(x::Matrix{T}, y::Vector{T}, rcond::T; 
 		by_columns::Bool=false, bias::Bool=false)
@@ -70,6 +70,34 @@ for (fun, lapackfun!) in [(:llsq_orth, :gelsy!), (:llsq_svd, :gelsd!)]
 			($lapackfun!)(bias ? append_ones(x', 2) : x', y', rcond)[1]
 		else
 			($lapackfun!)(bias ? append_ones(x, 2) : copy(x), copy(y), rcond)[1]
+		end
+	end
+
+	@eval function ($wfun){T<:FloatingPoint}(x::Matrix{T}, y::Vector{T}, w::Vector{T}, rcond::T; 
+		by_columns::Bool=false, bias::Bool=false)
+
+		sqw = sqrt(w)
+
+		if by_columns
+			xwt = bmultiply(x', sqw, 1)
+			($lapackfun!)(bias ? hcat(xwt, sqw) : xwt, y .* sqw, rcond)[1]
+		else
+			xw = bmultiply(x, sqw, 1)
+			($lapackfun!)(bias ? hcat(xw, sqw) : xw, y .* sqw, rcond)[1]
+		end
+	end
+
+	@eval function ($wfun){T<:FloatingPoint}(x::Matrix{T}, y::Matrix{T}, w::Vector{T}, rcond::T; 
+		by_columns::Bool=false, bias::Bool=false)
+
+		sqw = sqrt(w)
+
+		if by_columns
+			xwt = bmultiply(x', sqw, 1)
+			($lapackfun!)(bias ? hcat(xwt, sqw) : xwt, bmultiply(y', sqw, 1), rcond)[1]
+		else
+			xw = bmultiply(x, sqw, 1)
+			($lapackfun!)(bias ? hcat(xw, sqw) : xw, bmultiply(y, sqw, 1), rcond)[1]
 		end
 	end
 end
@@ -103,11 +131,19 @@ function linearreg_lsq{T<:FloatingPoint}(
 
 	elseif method == :orth
 		if rcond < 0 rcond = default_rcond(x) end
-		llsq_orth(x, y, rcond; by_columns=by_columns, bias=bias)
+		if no_weights
+			llsq_orth(x, y, rcond; by_columns=by_columns, bias=bias)
+		else
+			wllsq_orth(x, y, weights, rcond; by_columns=by_columns, bias=bias)
+		end
 
 	elseif method == :svd
 		if rcond < 0 rcond = default_rcond(x) end
-		llsq_svd(x, y, rcond; by_columns=by_columns, bias=bias)
+		if no_weights
+			llsq_svd(x, y, rcond; by_columns=by_columns, bias=bias)
+		else
+			wllsq_svd(x, y, weights, rcond; by_columns=by_columns, bias=bias)
+		end
 
 	else
 		throw(ArgumentError("Invalid method for linearreg_lsq."))
