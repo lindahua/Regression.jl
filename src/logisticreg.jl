@@ -64,3 +64,35 @@ function evaluate_values_and_derivs!(
 end
 
 
+####
+#
+#  driver function
+#
+####
+
+function logisticreg_objfun(x::Matrix{Float64}, y::Vector{Float64}, r::Float64; by_columns::Bool=false)
+	generic_regress_objfun(LogisticRegressFunctor(), x, y, 1.0; by_columns=by_columns)
+end
+
+function logisticreg(x::Matrix{Float64}, 
+                     y::Vector{Float64}, 
+                     r::Float64,
+                     theta0::Vector{Float64};
+                     by_columns::Bool=false,
+                     method::Symbol = :bfgs,
+                     xtol::Float64 = 1.0e-12,
+                     ftol::Real = 1.0e-12,
+                     grtol::Real = 1.0e-8,
+                     iterations::Integer = 200, 
+                     show_trace::Bool=false)
+
+	objfun = logisticreg_objfun(x, y, r; by_columns=by_columns)
+	_check_thetadim(by_columns ? size(x, 1) : size(x, 2), theta0)
+
+	res = optimize(objfun, theta0; method=method, 
+		xtol=xtol, ftol=ftol, grtol=grtol, iterations=iterations, show_trace=show_trace)
+
+	return (res.minimum, res.f_minimum)
+end
+
+
