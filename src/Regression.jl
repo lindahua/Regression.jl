@@ -17,7 +17,7 @@ module Regression
 	generic_regress_objfun,
 
 	# logisticreg
-	LogisticRegressFunctor
+	LogisticRegressFunctor, logisticreg_objfun, logisticreg
 
 	# sources
 
