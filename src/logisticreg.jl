@@ -70,8 +70,11 @@ end
 #
 ####
 
-function logisticreg_objfun(x::Matrix{Float64}, y::Vector{Float64}, r::Float64; by_columns::Bool=false)
-	generic_regress_objfun(LogisticRegressFunctor(), x, y, 1.0; by_columns=by_columns)
+function logisticreg_objfun(x::Matrix{Float64}, y::Vector{Float64}, r::Float64; 
+	by_columns::Bool=false, bias::Bool=false)
+	generic_regress_objfun(LogisticRegressFunctor(), x, y, 1.0; 
+		by_columns=by_columns, 
+		bias=bias)
 end
 
 function logisticreg(x::Matrix{Float64}, 
@@ -79,6 +82,7 @@ function logisticreg(x::Matrix{Float64},
                      r::Float64,
                      theta0::Vector{Float64};
                      by_columns::Bool=false,
+                     bias::Bool=false,
                      method::Symbol = :bfgs,
                      xtol::Float64 = 1.0e-12,
                      ftol::Real = 1.0e-12,
@@ -86,8 +90,9 @@ function logisticreg(x::Matrix{Float64},
                      iterations::Integer = 200, 
                      show_trace::Bool=false)
 
-	objfun = logisticreg_objfun(x, y, r; by_columns=by_columns)
-	_check_thetadim(by_columns ? size(x, 1) : size(x, 2), theta0)
+	objfun = logisticreg_objfun(x, y, r; by_columns=by_columns, bias=bias)
+	dt = size(x, by_columns ? 1 : 2) + int(bias)
+	_check_thetadim(dt, theta0)
 
 	res = optimize(objfun, theta0; method=method, 
 		xtol=xtol, ftol=ftol, grtol=grtol, iterations=iterations, show_trace=show_trace)

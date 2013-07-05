@@ -46,6 +46,8 @@ d = 5
 x = randn(d, n)
 y = randbool(n) * 2. - 1.
 
+# without bias
+
 objfun = generic_regress_objfun(rf, x, y, 1.0; by_columns=true)
 
 for t = 1 : 10
@@ -71,10 +73,41 @@ for t = 1 : 10
 	@test_approx_eq g2 g
 end
 
+# with bias
+
+objfun = generic_regress_objfun(rf, x, y, 1.0; by_columns=true, bias=true)
+
+for t = 1 : 10
+	theta = randn(d+1)
+	u = x'theta[1:d] + theta[d+1]
+
+	v = zeros(n)
+	evaluate_values!(rf, u, y, v)
+	objv0 = sum(v) + 0.5 * abs2(norm(theta[1:d], 2))
+
+	@test_approx_eq objfun.f(theta) objv0
+
+	g0 = gradient(objfun.f, theta)
+	g = zeros(d+1)
+	objfun.g!(theta, g)
+
+	@test_approx_eq_eps g g0 1.0e-4
+
+	g2 = zeros(d+1)
+	objv2 = objfun.fg!(theta, g2)
+
+	@test_approx_eq objv2 objv0
+	@test_approx_eq g2 g
+end
+
+
+
 # by-rows
 
 x = rand(n, d)
 y = randbool(n) * 2. - 1.
+
+# without bias
 
 objfun = generic_regress_objfun(rf, x, y, 1.0; by_columns=false)
 
@@ -101,4 +134,30 @@ for t = 1 : 10
 	@test_approx_eq g2 g
 end
 
+# with bias
+
+objfun = generic_regress_objfun(rf, x, y, 1.0; by_columns=false, bias=true)
+
+for t = 1 : 10
+	theta = randn(d+1)
+	u = x * theta[1:d] + theta[d+1]
+
+	v = zeros(n)
+	evaluate_values!(rf, u, y, v)
+	objv0 = sum(v) + 0.5 * abs2(norm(theta[1:d], 2))
+
+	@test_approx_eq objfun.f(theta) objv0
+
+	g0 = gradient(objfun.f, theta)
+	g = zeros(d+1)
+	objfun.g!(theta, g)
+
+	@test_approx_eq_eps g g0 1.0e-4
+
+	g2 = zeros(d+1)
+	objv2 = objfun.fg!(theta, g2)
+
+	@test_approx_eq objv2 objv0
+	@test_approx_eq g2 g
+end
 
