@@ -1,9 +1,9 @@
 
 # import useful linear algebra tools
 
+import Base.LinAlg.BLAS.axpy!
 import Base.LinAlg.BLAS.gemv, Base.LinAlg.BLAS.gemv! 
 import Base.LinAlg.BLAS.gemm, Base.LinAlg.BLAS.gemm! 
-
 
 function append_zeros{T<:Number}(x::Matrix{T}, dim::Int)
 	if dim == 1
