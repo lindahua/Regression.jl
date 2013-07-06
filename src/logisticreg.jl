@@ -72,14 +72,13 @@ end
 
 function logisticreg_objfun(x::Matrix{Float64}, y::Vector{Float64}, r::Float64; 
 	by_columns::Bool=false, bias::Bool=false)
-	generic_regress_objfun(LogisticRegressFunctor(), x, y, 1.0; 
-		by_columns=by_columns, 
-		bias=bias)
+
+	generic_regress_objfun(LogisticRegressFunctor(), x, y, 1.0; by_columns=by_columns, bias=bias)
 end
 
 function logisticreg(x::Matrix{Float64}, 
                      y::Vector{Float64}, 
-                     r::Float64,
+                     r::Regularizer,
                      theta0::Vector{Float64};
                      by_columns::Bool=false,
                      bias::Bool=false,
@@ -90,10 +89,10 @@ function logisticreg(x::Matrix{Float64},
                      iterations::Integer = 200, 
                      show_trace::Bool=false)
 
-	objfun = logisticreg_objfun(x, y, r; by_columns=by_columns, bias=bias)
 	dt = size(x, by_columns ? 1 : 2) + int(bias)
-	_check_thetadim(dt, theta0)
+	@check_thetadim(dt, theta0)
 
+	objfun = logisticreg_objfun(x, y, r; by_columns=by_columns, bias=bias)
 	res = optimize(objfun, theta0; method=method, 
 		xtol=xtol, ftol=ftol, grtol=grtol, iterations=iterations, show_trace=show_trace)
 
