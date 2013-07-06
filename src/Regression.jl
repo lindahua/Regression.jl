@@ -20,7 +20,8 @@ module Regression
 	LogisticRegressFunctor, logisticreg_objfun, logisticreg,
 
 	# mclogisticreg
-	MultiClassLogisticRegressFunctor
+	MultiClassLogisticRegressFunctor, 
+	multiclass_logisticreg_objfun, multiclass_logisticreg
 
 	# sources
 

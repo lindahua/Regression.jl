@@ -20,6 +20,7 @@ abstract DifferentiableRegressFunctor <: RegressFunctor
 
 macro check_thetadim(d, theta)
 	quote
+		# println("d = $($d), theta = $($theta)")
 		if length($theta) != ($d)
 			throw(ArgumentError("The dimension of theta is inconsistent with the problem."))
 		end
@@ -159,7 +160,7 @@ function generic_regress_objfun(
 	end
 
 	function g!(vtheta::Vector{Float64}, vg::Vector{Float64})
-		@check_thetadim(dt * K, theta)
+		@check_thetadim(dt * K, vtheta)
 		theta = reshape(vtheta, dt, K)
 		g = reshape(vg, dt, K)
 		@assert pointer(theta) == pointer(vtheta)
@@ -172,7 +173,7 @@ function generic_regress_objfun(
 	end
 
 	function fg!(vtheta::Vector{Float64}, vg::Vector{Float64})
-		@check_thetadim(dt * K, theta)
+		@check_thetadim(dt * K, vtheta)
 		theta = reshape(vtheta, dt, K)
 		g = reshape(vg, dt, K)
 		@assert pointer(theta) == pointer(vtheta)

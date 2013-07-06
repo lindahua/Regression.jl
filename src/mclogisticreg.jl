@@ -110,3 +110,13 @@ function evaluate_values_and_derivs!(
 end
 
 
+function multiclass_logisticreg_objfun(K::Int, x::Matrix{Float64}, y::Vector{Int}, r::Regularizer; 
+	by_columns::Bool=false, bias::Bool=false)
+
+	generic_regress_objfun(MultiClassLogisticRegressFunctor(), K, x, y, 1.0; 
+		by_columns=by_columns, bias=bias)
+end
+
+
+
+

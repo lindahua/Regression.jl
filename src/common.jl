@@ -39,6 +39,7 @@ end
 function regularize_cost(a::Matrix{Float64}, r::Vector{Float64})
 	s = 0.
 	d = size(a, 1)
+	o = 0
 	for j in 1 : size(a, 2)
 		sj = 0.
 		for i in 1 : d
@@ -66,6 +67,7 @@ end
 
 function add_regularize_grad!(a::Matrix{Float64}, r::Vector{Float64}, g::Matrix{Float64})
 	d = size(a, 1)
+	o = 0
 	for j in 1 : size(a, 2)
 		for i in 1 : d
 			@inbounds g[o + i] += a[o + i] * r[i]
