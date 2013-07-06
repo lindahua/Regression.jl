@@ -48,7 +48,7 @@ y = randbool(n) * 2. - 1.
 
 # without bias
 
-objfun = generic_regress_objfun(rf, x, y, 1.0; by_columns=true)
+objfun = logisticreg_objfun(x, y, 1.0; by_columns=true)
 
 for t = 1 : 10
 	theta = randn(d)
@@ -75,7 +75,7 @@ end
 
 # with bias
 
-objfun = generic_regress_objfun(rf, x, y, 1.0; by_columns=true, bias=true)
+objfun = logisticreg_objfun(x, y, 1.0; by_columns=true, bias=true)
 
 for t = 1 : 10
 	theta = randn(d+1)
@@ -109,7 +109,7 @@ y = randbool(n) * 2. - 1.
 
 # without bias
 
-objfun = generic_regress_objfun(rf, x, y, 1.0; by_columns=false)
+objfun = logisticreg_objfun(x, y, 1.0; by_columns=false)
 
 for t = 1 : 10
 	theta = randn(d)
@@ -136,7 +136,7 @@ end
 
 # with bias
 
-objfun = generic_regress_objfun(rf, x, y, 1.0; by_columns=false, bias=true)
+objfun = logisticreg_objfun(x, y, 1.0; by_columns=false, bias=true)
 
 for t = 1 : 10
 	theta = randn(d+1)
