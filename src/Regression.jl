@@ -17,7 +17,10 @@ module Regression
 	generic_regress_objfun,
 
 	# logisticreg
-	LogisticRegressFunctor, logisticreg_objfun, logisticreg
+	LogisticRegressFunctor, logisticreg_objfun, logisticreg,
+
+	# mclogisticreg
+	MultiClassLogisticRegressFunctor
 
 	# sources
 
@@ -25,5 +28,6 @@ module Regression
 	include("linearreg.jl")
 	include("genericreg.jl")
 	include("logisticreg.jl")
+	include("mclogisticreg.jl")
 end
 

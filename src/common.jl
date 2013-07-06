@@ -36,7 +36,23 @@ function regularize_cost(a::Vector{Float64}, r::Vector{Float64})
 	0.5 * wsqsum(r, a)
 end
 
-function add_regularize_grad!(a::Vector{Float64}, r::Float64, g::Vector{Float64})
+function regularize_cost(a::Matrix{Float64}, r::Vector{Float64})
+	s = 0.
+	d = size(a, 1)
+	for j in 1 : size(a, 2)
+		sj = 0.
+		for i in 1 : d
+			@inbounds ai = a[o + i]
+			@inbounds sj += abs2(ai) * r[i]
+		end
+		s += sj
+		o += d
+	end
+	0.5 * s
+end
+
+
+function add_regularize_grad!(a::Array{Float64}, r::Float64, g::Array{Float64})
 	if r != 0
 		axpy!(r, a, g)
 	end
@@ -45,6 +61,16 @@ end
 function add_regularize_grad!(a::Vector{Float64}, r::Vector{Float64}, g::Vector{Float64})
 	for i in 1 : length(g)
 		@inbounds g[i] += a[i] * r[i]
+	end
+end
+
+function add_regularize_grad!(a::Matrix{Float64}, r::Vector{Float64}, g::Matrix{Float64})
+	d = size(a, 1)
+	for j in 1 : size(a, 2)
+		for i in 1 : d
+			@inbounds g[o + i] += a[o + i] * r[i]
+		end
+		o += d
 	end
 end
 
@@ -70,5 +96,4 @@ function check_regularizer(d::Int, r::Vector{Float64}, bias::Bool)
 	end
 	r
 end
-
 
