@@ -7,7 +7,7 @@ using Base.Test
 
 for m in [:qrlq, :orth, :svd]
 
-	println("testing $m ...")
+	# println("testing $m ...")
 
 	# by rows
 
@@ -109,7 +109,7 @@ end
 
 ### ridge regression
 
-println("testing ridge ...")
+# println("testing ridge ...")
 
 # by rows
 
