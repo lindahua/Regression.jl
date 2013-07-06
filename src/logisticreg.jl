@@ -90,7 +90,14 @@ function logisticreg(x::Matrix{Float64},
                      show_trace::Bool=false)
 
 	dt = size(x, by_columns ? 1 : 2) + int(bias)
-	@check_thetadim(dt, theta0)
+	if length(theta0) != dt
+		throw(ArgumentError("The dimension of theta0 is inconsistent with the problem."))
+	end
+
+	n = size(x, by_columns ? 2 : 1)
+	if length(y) != n
+		throw(ArgumentError("The size of y does not match the number of samples."))
+	end
 
 	objfun = logisticreg_objfun(x, y, r; by_columns=by_columns, bias=bias)
 	res = optimize(objfun, theta0; method=method, 

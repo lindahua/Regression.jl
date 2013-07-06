@@ -25,7 +25,6 @@ function append_ones{T<:Number}(x::Matrix{T}, dim::Int)
 	end
 end
 
-
 typealias Regularizer Union(Float64, Vector{Float64})
 
 function regularize_cost(a::Array{Float64}, r::Float64)

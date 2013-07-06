@@ -117,6 +117,38 @@ function multiclass_logisticreg_objfun(K::Int, x::Matrix{Float64}, y::Vector{Int
 		by_columns=by_columns, bias=bias)
 end
 
+function multiclass_logisticreg(K::Int,
+								x::Matrix{Float64}, 
+                                y::Vector{Int}, 
+                     			r::Regularizer,
+                     			theta0::Matrix{Float64};
+                     			by_columns::Bool=false,
+                     			bias::Bool=false,
+                     			method::Symbol = :bfgs,
+                     			xtol::Float64 = 1.0e-12,
+                     			ftol::Real = 1.0e-12,
+                     			grtol::Real = 1.0e-8,
+                     			iterations::Integer = 200, 
+                     			show_trace::Bool=false)
+
+	dt = size(x, by_columns ? 1 : 2) + int(bias)
+	if size(theta0) != (dt, K)
+		throw(ArgumentError("The dimension of theta0 is inconsistent with the problem."))
+	end
+
+	n = size(x, by_columns ? 2 : 1)
+	if length(y) != n
+		throw(ArgumentError("The size of y does not match the number of samples."))
+	end
+
+	objfun = multiclass_logisticreg_objfun(K, x, y, r; by_columns=by_columns, bias=bias)
+	res = optimize(objfun, vec(theta0); method=method, 
+		xtol=xtol, ftol=ftol, grtol=grtol, iterations=iterations, show_trace=show_trace)
+
+	theta = reshape(res.minimum, dt, K)
+
+	return (theta, res.f_minimum)
+end
 
 
 
