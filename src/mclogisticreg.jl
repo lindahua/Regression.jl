@@ -19,12 +19,13 @@ function evaluate_values!(
 	K = size(u, 1)
 	n = size(u, 2)
 
+	o = 0
 	for j in 1 : n		
 		yj = y[j]
 
-		maxu = u[1, j] 
+		@inbounds maxu = u[1 + o] 
 		for k in 2 : K
-			uk = u[k, j]
+			@inbounds uk = u[k + o]
 			if uk > maxu
 				maxu = uk
 			end
@@ -32,10 +33,11 @@ function evaluate_values!(
 
 		sj = 0.
 		for k in 1 : K
-			sj += exp(u[k, j] - maxu)
+			@inbounds sj += exp(u[k + o] - maxu)
 		end
 
-		v[j] = log(sj) + maxu - u[yj, j]
+		@inbounds v[j] = log(sj) + maxu - u[yj + o]
+		o += K
 	end
 end
 
@@ -48,12 +50,13 @@ function evaluate_derivs!(
 	K = size(u, 1)
 	n = size(u, 2)
 
+	o = 0
 	for j in 1 : n
 		yj = y[j]
 
-		maxu = u[1, j]
+		@inbounds maxu = u[1 + o]
 		for k in 2 : K
-			uk = u[k, j]
+			@inbounds uk = u[k + o]
 			if uk > maxu
 				maxu = uk
 			end
@@ -61,15 +64,17 @@ function evaluate_derivs!(
 
 		sj = 0.
 		for k in 1 : K
-			uk = u[k, j]
-			sj += (g[k, j] = exp(uk - maxu))
+			@inbounds uk = u[k + o]
+			@inbounds sj += (g[k + o] = exp(uk - maxu))
 		end
 
 		inv_sj = 1.0 / sj
 		for k in 1 : K
-			g[k, j] *= inv_sj
+			@inbounds g[k + o] *= inv_sj
 		end
-		g[yj, j] -= 1.0
+		@inbounds g[yj + o] -= 1.0
+
+		o += K
 	end
 end
 
@@ -83,12 +88,13 @@ function evaluate_values_and_derivs!(
 	K = size(u, 1)
 	n = size(u, 2)
 
+	o = 0
 	for j in 1 : n		
 		yj = y[j]
 
-		maxu = u[1, j] 
+		@inbounds maxu = u[1 + o] 
 		for k in 2 : K
-			uk = u[k, j]
+			@inbounds uk = u[k + o]
 			if uk > maxu
 				maxu = uk
 			end
@@ -96,16 +102,18 @@ function evaluate_values_and_derivs!(
 
 		sj = 0.
 		for k in 1 : K
-			sj += (g[k, j] = exp(u[k, j] - maxu))
+			@inbounds sj += (g[k + o] = exp(u[k + o] - maxu))
 		end
 
 		inv_sj = 1.0 / sj
 		for k in 1 : K
-			g[k, j] *= inv_sj
+			@inbounds g[k + o] *= inv_sj
 		end
-		g[yj, j] -= 1.0
+		@inbounds g[yj + o] -= 1.0
 
-		v[j] = log(sj) + maxu - u[yj, j]
+		@inbounds v[j] = log(sj) + maxu - u[yj + o]
+
+		o += K
 	end
 end
 
