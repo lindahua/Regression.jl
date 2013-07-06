@@ -70,7 +70,7 @@ end
 #
 ####
 
-function logisticreg_objfun(x::Matrix{Float64}, y::Vector{Float64}, r::Float64; 
+function logisticreg_objfun(x::Matrix{Float64}, y::Vector{Float64}, r::Regularizer; 
 	by_columns::Bool=false, bias::Bool=false)
 
 	generic_regress_objfun(LogisticRegressFunctor(), x, y, 1.0; by_columns=by_columns, bias=bias)
