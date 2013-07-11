@@ -21,7 +21,7 @@ y = [ones(n); -ones(n)]
 println("Logistic regression ...")
 
 theta0 = zeros(3)
-theta, objv = logisticreg(x, y, 1.0e-3, theta0; by_columns=true, bias=true)
+theta, objv = logisticreg(x, y, 1.0e-3, theta0; by_columns=true, bias=true, show_trace=true)
 println("   theta = $(theta)")
 println("   objv  = $(objv)")
 
