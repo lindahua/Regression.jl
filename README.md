@@ -7,7 +7,7 @@ This package currently implements:
 
 * Linear regression 
 * Ridge regression
-* Logisitc regression
+* Logistic regression
 * Multi-class logistic regression
 * Generalized regression with user-defined terms
 
