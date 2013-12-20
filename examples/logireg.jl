@@ -30,10 +30,10 @@ println("Visualize ...")
 function visboundary(theta, rhs, obs, color)
 	x = obs[1,:]
 	y = obs[2,:]
-	xmin = min(x)
-	xmax = max(x)
-	ymin = min(y)
-	ymax = max(y)
+	xmin = minimum(x)
+	xmax = maximum(x)
+	ymin = minimum(y)
+	ymax = maximum(y)
 	a = theta[1]
 	b = theta[2]
 	c = theta[3]
