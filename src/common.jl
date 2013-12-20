@@ -28,11 +28,11 @@ end
 typealias Regularizer Union(Float64, Vector{Float64})
 
 function regularize_cost(a::Array{Float64}, r::Float64)
-	0.5 * r * sqsum(a)
+	0.5 * r * sumsq(a)
 end
 
 function regularize_cost(a::Vector{Float64}, r::Vector{Float64})
-	0.5 * wsqsum(r, a)
+	0.5 * wsumsq(r, a)
 end
 
 function regularize_cost(a::Matrix{Float64}, r::Vector{Float64})
