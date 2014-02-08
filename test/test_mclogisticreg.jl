@@ -58,7 +58,7 @@ for t = 1 : 10
 
 	v = zeros(n)
 	evaluate_values!(rf, u, y, v)
-	objv0 = sum(v) + 0.5 * sqsum(theta)
+	objv0 = sum(v) + 0.5 * sumsq(theta)
 
 	@test_approx_eq objfun.f(vtheta) objv0
 
@@ -86,7 +86,7 @@ for t = 1 : 10
 
 	v = zeros(n)
 	evaluate_values!(rf, u, y, v)
-	objv0 = sum(v) + 0.5 * sqsum(theta[1:d,:])
+	objv0 = sum(v) + 0.5 * sumsq(theta[1:d,:])
 
 	@test_approx_eq objfun.f(vtheta) objv0
 
@@ -120,7 +120,7 @@ for t = 1 : 10
 
 	v = zeros(n)
 	evaluate_values!(rf, u, y, v)
-	objv0 = sum(v) + 0.5 * sqsum(theta)
+	objv0 = sum(v) + 0.5 * sumsq(theta)
 
 	@test_approx_eq objfun.f(vtheta) objv0
 
@@ -148,7 +148,7 @@ for t = 1 : 10
 
 	v = zeros(n)
 	evaluate_values!(rf, u, y, v)
-	objv0 = sum(v) + 0.5 * sqsum(theta[1:d,:])
+	objv0 = sum(v) + 0.5 * sumsq(theta[1:d,:])
 
 	@test_approx_eq objfun.f(vtheta) objv0
 
