@@ -3,6 +3,7 @@
 import Base.LinAlg.LAPACK.gels!
 import Base.LinAlg.LAPACK.gelsy!
 import Base.LinAlg.LAPACK.gelsd!
+using PDMats
 
 
 #################################################
