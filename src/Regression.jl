@@ -1,7 +1,8 @@
 module Regression
 	using NumericExtensions
 	using Optim
-
+	using PDMats
+	
 	export
 
 	# common
