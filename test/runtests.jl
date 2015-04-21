@@ -1,4 +1,5 @@
 tests = [
+	"common",
 	"linearreg"
 ]
 

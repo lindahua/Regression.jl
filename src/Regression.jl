@@ -1,13 +1,13 @@
 module Regression
 
 using Reexport
+using ArrayViews
 @reexport using EmpiricalRisks
 
 import Base.LinAlg: BlasReal
 import Base.LinAlg.LAPACK: gels!, gelsy!, gelsd!
 
 export
-
 	# linearreg
 	llsq_qrlq, wllsq_qrlq,
 	llsq_orth, wllsq_orth,
@@ -17,6 +17,7 @@ export
 
 # source files
 
+include("common.jl")
 include("linearreg.jl")
 
 end # module
