@@ -19,9 +19,12 @@ descent_dir!(::GDSolver, st::Nothing, θ::StridedArray, g::StridedArray, p::Stri
 _prep_searchdir(::GDSolver, g::StridedArray) = g
 
 
+default_solver() = GDSolver()
+
+
 ## Options
 
-type RiskMinOptions
+type Options
     maxiter::Int        # maximum number of iterations
     ftol::Float64       # function value change tolerance
     xtol::Float64       # solution change tolerance
@@ -31,13 +34,13 @@ type RiskMinOptions
     verbosity::Symbol   # verbosity (:none | :final | :iter)
 end
 
-function RiskMinOptions(;maxiter::Integer=200,
-                         ftol::Real=1.0e-6,
-                         xtol::Real=1.0e-8,
-                         grtol::Real=1.0e-8,
-                         armijo::Real=0.5,
-                         beta::Real=0.5,
-                         verbosity::Symbol=:none)
+function Options(;maxiter::Integer=200,
+                  ftol::Real=1.0e-6,
+                  xtol::Real=1.0e-8,
+                  grtol::Real=1.0e-8,
+                  armijo::Real=0.5,
+                  beta::Real=0.5,
+                  verbosity::Symbol=:none)
 
      maxiter > 1 || error("maxiter must be an integer greater than 1.")
      ftol > 0 || error("ftol must be a positive real value.")
@@ -48,26 +51,26 @@ function RiskMinOptions(;maxiter::Integer=200,
      (verbosity == :none || verbosity == :final || verbosity == :iter) ||
          error("verbosity must be either :none, :final, or :iter.")
 
-     RiskMinOptions(convert(Int, maxiter),
-                    convert(Float64, ftol),
-                    convert(Float64, xtol),
-                    convert(Float64, grtol),
-                    convert(Float64, armijo),
-                    convert(Float64, beta),
-                    verbosity)
+     Options(convert(Int, maxiter),
+             convert(Float64, ftol),
+             convert(Float64, xtol),
+             convert(Float64, grtol),
+             convert(Float64, armijo),
+             convert(Float64, beta),
+             verbosity)
 end
 
 
 ## Solution
 
-immutable RiskMinSolution{Sol<:StridedArray}
+immutable Solution{Sol<:StridedArray}
     sol::Sol
     fval::Float64
     niters::Int
     converged::Bool
 end
 
-function Base.show(io::IO, r::RiskMinSolution)
+function Base.show(io::IO, r::Solution)
     println(io, "RiskMinSolution:")
     println(io, "- sol:       $(size(r.sol)) $(typeof(r.sol))")
     println(io, "- fval:      $(r.fval)")
@@ -84,7 +87,7 @@ function solve!{T}(rmodel::SupervisedRiskModel,    # the risk model
                    X::StridedArray{T},             # array of inputs
                    y::StridedArray,                # array of outputs
                    solver::RiskMinSolver,          # solver
-                   options::RiskMinOptions,        # options to control the procedure
+                   options::Options,               # options to control the procedure
                    callback::Nullable{Function})   # callback function
 
     ## extract arguments and options
@@ -160,20 +163,5 @@ function solve!{T}(rmodel::SupervisedRiskModel,    # the risk model
         print_final(t, v, converged)
     end
 
-    return RiskMinSolution(θ, v, t, converged)
-end
-
-
-function solve{T}(rmodel::SupervisedRiskModel,
-                  reg::Regularizer,
-                  θ::StridedArray{T},
-                  X::StridedArray{T},
-                  y::StridedArray;
-                  solver::RiskMinSolver=GDSolver(),
-                  options::RiskMinOptions=RiskMinOptions(),
-                  callback::Union(Nothing,Function)=nothing)
-
-    cb = callback == nothing ? Nullable{Function}() :
-                               Nullable(callback)
-    solve!(rmodel, reg, copy(θ), X, y, solver, options, cb)
+    return Solution(θ, v, t, converged)
 end

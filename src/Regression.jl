@@ -15,10 +15,7 @@ export
 
 	# solve
 	RiskMinSolver,
-	GDSolver,
-
-	RiskMinOptions,
-	RiskMinSolution
+	GDSolver
 
 
 # source files
@@ -27,5 +24,6 @@ include("common.jl")
 include("linearreg.jl")
 include("solve.jl")
 include("print.jl")
+include("regproblems.jl")
 
 end # module

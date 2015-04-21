@@ -1,6 +1,8 @@
 # Logistic regression
 
 using Regression
+import Regression: solve, Options
+
 
 # Data
 
@@ -13,12 +15,10 @@ y = sign(X'w + 0.2 * randn(n))
 
 # Solve
 
-ret = Regression.solve(
-    riskmodel(LinearPred(d), LogisticLoss()),
-    SqrL2Reg(1.0e-2),
-    zeros(3), X, y;
-    options=RiskMinOptions(verbosity=:iter, ftol=1.0e-5 * n))
-    
+ret = solve(LogisticLoss(), X, y;
+            reg=SqrL2Reg(1.0e-2),
+            options=Options(verbosity=:iter, ftol=1.0e-5 * n))
+
 println()
 
 # Print results
