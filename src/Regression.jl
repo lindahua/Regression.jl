@@ -10,12 +10,21 @@ import Base.LinAlg.LAPACK: gels!, gelsy!, gelsd!
 export
 	# linearreg
 	llsq,
-	ridgereg
+	ridgereg,
+
+	# solve
+	RiskMinSolver,
+	GDSolver,
+
+	RiskMinOptions,
+	RiskMinSolution
 
 
 # source files
 
 include("common.jl")
 include("linearreg.jl")
+include("solve.jl")
+include("print.jl")
 
 end # module
