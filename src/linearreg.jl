@@ -1,11 +1,5 @@
 # Linear regression
 
-import Base.LinAlg.LAPACK.gels!
-import Base.LinAlg.LAPACK.gelsy!
-import Base.LinAlg.LAPACK.gelsd!
-using PDMats
-
-
 #################################################
 #
 #  Specific methods
@@ -14,12 +8,12 @@ using PDMats
 
 # qrlq
 
-function llsq_qrlq{T<:FloatingPoint}(x::Matrix{T}, y::Vector{T}; by_columns::Bool=false, bias::Bool=false)
+function llsq_qrlq{T<:BlasReal}(x::Matrix{T}, y::Vector{T}; by_columns::Bool=false, bias::Bool=false)
 	xc = bias ? append_ones(x, by_columns ? 1 : 2) : copy(x)
 	gels!(by_columns ? 'T' : 'N', xc, copy(y))[2]
 end
 
-function llsq_qrlq{T<:FloatingPoint}(x::Matrix{T}, y::Matrix{T}; by_columns::Bool=false, bias::Bool=false)
+function llsq_qrlq{T<:BlasReal}(x::Matrix{T}, y::Matrix{T}; by_columns::Bool=false, bias::Bool=false)
 	if by_columns
 		gels!('T', bias ? append_ones(x, 1) : copy(x), y')[2]
 	else
@@ -27,7 +21,7 @@ function llsq_qrlq{T<:FloatingPoint}(x::Matrix{T}, y::Matrix{T}; by_columns::Boo
 	end
 end
 
-function wllsq_qrlq{T<:FloatingPoint}(x::Matrix{T}, y::Vector{T}, w::Vector{T}; by_columns::Bool=false, bias::Bool=false)
+function wllsq_qrlq{T<:BlasReal}(x::Matrix{T}, y::Vector{T}, w::Vector{T}; by_columns::Bool=false, bias::Bool=false)
 	sqw = sqrt(w)
 	if by_columns
 		xw = bmultiply(x, sqw, 2)
@@ -38,7 +32,7 @@ function wllsq_qrlq{T<:FloatingPoint}(x::Matrix{T}, y::Vector{T}, w::Vector{T}; 
 	end
 end
 
-function wllsq_qrlq{T<:FloatingPoint}(x::Matrix{T}, y::Matrix{T}, w::Vector{T}; by_columns::Bool=false, bias::Bool=false)
+function wllsq_qrlq{T<:BlasReal}(x::Matrix{T}, y::Matrix{T}, w::Vector{T}; by_columns::Bool=false, bias::Bool=false)
 	sqw = sqrt(w)
 	if by_columns
 		xw = bmultiply(x, sqw, 2)
@@ -54,7 +48,7 @@ end
 
 for (fun, wfun, lapackfun!) in [(:llsq_orth, :wllsq_orth, :gelsy!), (:llsq_svd, :wllsq_svd, :gelsd!)]
 
-	@eval function ($fun){T<:FloatingPoint}(x::Matrix{T}, y::Vector{T}, rcond::T; 
+	@eval function ($fun){T<:BlasReal}(x::Matrix{T}, y::Vector{T}, rcond::T;
 		by_columns::Bool=false, bias::Bool=false)
 
 		if by_columns
@@ -64,7 +58,7 @@ for (fun, wfun, lapackfun!) in [(:llsq_orth, :wllsq_orth, :gelsy!), (:llsq_svd, 
 		end
 	end
 
-	@eval function ($fun){T<:FloatingPoint}(x::Matrix{T}, y::Matrix{T}, rcond::T; 
+	@eval function ($fun){T<:BlasReal}(x::Matrix{T}, y::Matrix{T}, rcond::T;
 		by_columns::Bool=false, bias::Bool=false)
 
 		if by_columns
@@ -74,7 +68,7 @@ for (fun, wfun, lapackfun!) in [(:llsq_orth, :wllsq_orth, :gelsy!), (:llsq_svd, 
 		end
 	end
 
-	@eval function ($wfun){T<:FloatingPoint}(x::Matrix{T}, y::Vector{T}, w::Vector{T}, rcond::T; 
+	@eval function ($wfun){T<:BlasReal}(x::Matrix{T}, y::Vector{T}, w::Vector{T}, rcond::T;
 		by_columns::Bool=false, bias::Bool=false)
 
 		sqw = sqrt(w)
@@ -88,7 +82,7 @@ for (fun, wfun, lapackfun!) in [(:llsq_orth, :wllsq_orth, :gelsy!), (:llsq_svd, 
 		end
 	end
 
-	@eval function ($wfun){T<:FloatingPoint}(x::Matrix{T}, y::Matrix{T}, w::Vector{T}, rcond::T; 
+	@eval function ($wfun){T<:BlasReal}(x::Matrix{T}, y::Matrix{T}, w::Vector{T}, rcond::T;
 		by_columns::Bool=false, bias::Bool=false)
 
 		sqw = sqrt(w)
@@ -110,7 +104,7 @@ end
 #
 #################################################
 
-default_rcond{T<:FloatingPoint}(x::Matrix{T}) = eps(convert(T, length(x)))
+default_rcond{T<:BlasReal}(x::Matrix{T}) = eps(convert(T, length(x)))
 
 function linreg_chkdims(x::Matrix, y::Vector, w::Nothing, by_columns::Bool)
 	size(x, by_columns ? 2 : 1) == length(y)
@@ -131,10 +125,10 @@ function linreg_chkdims(x::Matrix, y::Matrix, w::Vector, by_columns::Bool)
 end
 
 
-function linearreg_lsq{T<:FloatingPoint}(
-	x::Matrix{T}, 
-	y::VecOrMat{T}; 
-	method::Symbol=:qrlq, 
+function linearreg_lsq{T<:BlasReal}(
+	x::Matrix{T},
+	y::VecOrMat{T};
+	method::Symbol=:qrlq,
 	by_columns::Bool=false,
 	bias::Bool=false,
 	weights::Union(Vector{T},Nothing)=nothing,
@@ -243,7 +237,7 @@ end
 
 
 function ridgereg(
-	x::Matrix{Float64}, 
+	x::Matrix{Float64},
 	y::VecOrMat{Float64},
 	q::AbstractPDMat;
 	by_columns::Bool=false,
@@ -252,7 +246,7 @@ function ridgereg(
 
 	if !linreg_chkdims(x, y, weights, by_columns)
 		throw(ArgumentError("Argument dimensions must match."))
-	end	
+	end
 	d = size(x, by_columns ? 1 : 2)
 	if dim(q) != d
 		throw(ArgumentError("The dimension of q is incorrect."))
@@ -273,11 +267,11 @@ function ridgereg(
 		@assert size(H) == (d, d)
 		add!(H, q)
 		cholfact!(H) \ g
-	end	
+	end
 end
 
 function ridgereg(
-	x::Matrix{Float64}, 
+	x::Matrix{Float64},
 	y::VecOrMat{Float64},
 	r::Float64;
 	by_columns::Bool=false,
@@ -289,7 +283,7 @@ function ridgereg(
 end
 
 function ridgereg(
-	x::Matrix{Float64}, 
+	x::Matrix{Float64},
 	y::VecOrMat{Float64},
 	r::Vector{Float64};
 	by_columns::Bool=false,
@@ -300,7 +294,7 @@ function ridgereg(
 end
 
 function ridgereg(
-	x::Matrix{Float64}, 
+	x::Matrix{Float64},
 	y::VecOrMat{Float64},
 	r::Matrix{Float64};
 	by_columns::Bool=false,
@@ -309,5 +303,3 @@ function ridgereg(
 
 	ridgereg(x, y, PDMat(r), by_columns=by_columns, bias=bias, weights=weights)
 end
-
-
