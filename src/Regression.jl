@@ -9,10 +9,7 @@ import Base.LinAlg.LAPACK: gels!, gelsy!, gelsd!
 
 export
 	# linearreg
-	llsq_qrlq, wllsq_qrlq,
-	llsq_orth, wllsq_orth,
-	llsq_svd, wllsq_svd,
-	linearreg_lsq, ridgereg
+	llsq
 
 
 # source files
