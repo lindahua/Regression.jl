@@ -11,7 +11,7 @@ function print_iter(t::Int, v::Real)
     @printf("%5d   %12.4e\n", t, v)
 end
 
-function print_iter(t::Int, v::Real, v_pre::Real, g::StridedVector, α::Real)
+function print_iter(t::Int, v::Real, v_pre::Real, g::StridedArray, α::Real)
     @printf("%5d   %12.4e   %12.4e   %12.4e   %12.4e\n", t, v, v - v_pre, vecnorm(g), α)
 end
 

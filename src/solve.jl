@@ -88,7 +88,7 @@ function solve!{T}(rmodel::SupervisedRiskModel,    # the risk model
                    y::StridedArray,                # array of outputs
                    solver::RiskMinSolver,          # solver
                    options::Options,               # options to control the procedure
-                   callback::Nullable{Function})   # callback function
+                   callback::Function)             # callback function
 
     ## extract arguments and options
 
@@ -153,10 +153,7 @@ function solve!{T}(rmodel::SupervisedRiskModel,    # the risk model
         end
 
         # invoke callback (when requested)
-        if !isnull(callback)
-            cf = get(callback)
-            cf(t, θ, v, g)
-        end
+        callback(t, θ, v, g)
     end
 
     if vbose >= VERBOSE_FINAL

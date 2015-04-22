@@ -44,7 +44,3 @@ function _xmcy!{T<:Real}(r::Array{T}, x::Array{T}, c::T, y::Array{T})
     end
     r
 end
-
-_nullable_callback(cb::Union(Nothing,Function)) =
-    cb == nothing ? Nullable{Function}() :
-                    Nullable(cb)
