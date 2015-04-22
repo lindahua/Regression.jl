@@ -1,7 +1,7 @@
 examples = [
     "linearreg",
     "logireg",
-    "mnlogireg"
+    "mlogireg"
 ]
 
 for e in examples

@@ -59,7 +59,7 @@ function Base.show(io::IO, r::Solution)
 end
 
 
-## Solve
+## core solve! function
 
 function solve!{T<:FloatingPoint}(
     rmodel::SupervisedRiskModel,    # the risk model
@@ -151,66 +151,25 @@ function solve!{T<:FloatingPoint}(
 end
 
 
-## solve functions
+## higher level problem-solve functions
 
 function solve{T<:FloatingPoint}(
-    loss::UnivariateLoss,
-    X::StridedMatrix{T},
-    y::StridedVector;
-    bias::Real=zero(T),
+    pb::Problem{T};
     reg::Regularizer=ZeroReg(),
     init::StridedArray{T}=T[],
     solver::RiskMinSolver=default_solver(),
     options::Options=Options(),
     callback::Function=no_op)
 
-    size(X,2) == length(y) ||
-        error("Mismatched input dimensions.")
+    θ = isempty(init) ? initsol(pb) : copy(init)
 
-    d = size(X,1)
-    dθ = bias == zero(bias) ? d : d+1
-
-    θ = isempty(init) ? zeros(T, dθ) : copy(init)
-
-    if bias == zero(bias)
-        solve!(riskmodel(LinearPred(d), loss), reg,
-            θ, X, y, solver, options, callback)
+    if has_bias(pb)
+        solve!(riskmodel(pred_with_bias(pb), loss(pb)), reg,
+            θ, inputs(pb), outputs(pb), solver, options, callback)
 
     else
-        solve!(riskmodel(AffinePred(d, bias), loss), reg,
-            θ, X, y, solver, options, callback)
+        solve!(riskmodel(pred_without_bias(pb), loss(pb)), reg,
+            θ, inputs(pb), outputs(pb), solver, options, callback)
 
-    end::Solution{Vector{T}}
-end
-
-
-function solve{T<:FloatingPoint}(
-    loss::MultivariateLoss,
-    X::StridedMatrix{T},
-    Y::StridedArray,
-    k::Int;
-    bias::Real=zero(T),
-    reg::Regularizer=ZeroReg(),
-    init::StridedArray{T}=T[],
-    solver::RiskMinSolver=default_solver(),
-    options::Options=Options(),
-    callback::Function=no_op)
-
-    size(X,2) == size(Y,ndims(Y)) ||
-        error("Mismatched input dimensions.")
-
-    d = size(X,1)
-    dθ = bias == zero(bias) ? d : d+1
-
-    θ = isempty(init) ? zeros(T, k, dθ) : copy(init)
-
-    if bias == zero(bias)
-        solve!(riskmodel(MvLinearPred(d, k), loss), reg,
-            θ, X, Y, solver, options, callback)
-
-    else
-        solve!(riskmodel(MvAffinePred(d, k, bias), loss), reg,
-            θ, X, Y, solver, options, callback)
-
-    end::Solution{Matrix{T}}
+    end::Solution{typeof(θ)}
 end

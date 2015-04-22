@@ -33,11 +33,13 @@ function verify_solver(title, loss::Loss, data,
         dθ == dx + 1 ? 1.0 :
         error("Unmatched dimensions.")
 
+    pb = ndims(θg) == 1 ? UnivariateRegression(loss, data...; bias=b) :
+                          MultivariateRegression(loss, data...; bias=b)
+
     for solv in _solvers
         println("      - with solver $(typeof(solv))")
         n = size(X, ndims(X))
-        ret = Regression.solve(loss, data...,
-                               bias=b,
+        ret = Regression.solve(pb;
                                reg=SqrL2Reg(1.0e-4),
                                solver=solv,
                                options=Regression.Options(grtol=n * 1.0e-6))

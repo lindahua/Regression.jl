@@ -14,8 +14,7 @@ y = vec(mapslices(indmax, U, 1))
 
 # Solve
 
-ret = solve(MultiLogisticLoss(), k, X, y;
-            bias=1.0,
+ret = solve(mlogisticreg(X, y, k; bias=1.0);
             reg=SqrL2Reg(1.0e-3),
             options=Options(verbosity=:iter, ftol=1.0e-5 * n))
 
