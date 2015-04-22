@@ -22,10 +22,11 @@ end
 const _solvers = [GDSolver(), BFGSSolver()]
 
 
-function verify_solver(title, loss::Loss, X::Matrix, data,
+function verify_solver(title, loss::Loss, data,
                        θg::Array, vcond::Function, thres::Real)
     println("    $title")
 
+    X = data[1]
     dx = size(X, 1)
     dθ = size(θg, ndims(θg))
     b = dθ == dx ? 0.0 :
@@ -63,16 +64,16 @@ ua = u .+ wa[d+1]
 # test cases
 
 verify_solver("LinearPred + SqrLoss",
-    SqrLoss(), X, (X, u), w, _relerr, 1.0e-4)
+    SqrLoss(), (X, u), w, _relerr, 1.0e-4)
 
 verify_solver("AffinePred + SqrLoss",
-    SqrLoss(), X, (X, ua), wa, _relerr, 1.0e-4)
+    SqrLoss(), (X, ua), wa, _relerr, 1.0e-4)
 
 verify_solver("LinearPred + LogisticLoss",
-    SqrLoss(), X, (X, u), w, _corrdist, 1.0e-3)
+    SqrLoss(), (X, u), w, _corrdist, 1.0e-3)
 
 verify_solver("AffinePred + LogisticLoss",
-    SqrLoss(), X, (X, ua), wa, _corrdist, 1.0e-3)
+    SqrLoss(), (X, ua), wa, _corrdist, 1.0e-3)
 
 
 ## Multivariate loss
@@ -90,17 +91,17 @@ Ua = U .+ Wa[:,d+1]
 # test cases
 
 verify_solver("MvLinearPred + SumSqrLoss",
-    SumSqrLoss(), X, (k, X, U), W, _relerr, 1.0e-4)
+    SumSqrLoss(), (X, U, k), W, _relerr, 1.0e-4)
 
 verify_solver("MvAffinePred + SumSqrLoss",
-    SumSqrLoss(), X, (k, X, Ua), Wa, _relerr, 1.0e-4)
+    SumSqrLoss(), (X, Ua, k), Wa, _relerr, 1.0e-4)
 
 y = _classify(U)
 verify_solver("MvLinearPred + MultiLogisticLoss",
-    MultiLogisticLoss(), X, (k, X, y), W,
+    MultiLogisticLoss(), (X, y, k), W,
         (θ, θ0) -> _errrate(MvLinearPred(d, k), X, θ, θ0), 0.02)
 
 ya = _classify(Ua)
 verify_solver("MvAffinePred + MultiLogisticLoss",
-    MultiLogisticLoss(), X, (k, X, ya), Wa,
+    MultiLogisticLoss(), (X, ya, k), Wa,
         (θ, θ0) -> _errrate(MvAffinePred(d, k), X, θ, θ0), 0.02)

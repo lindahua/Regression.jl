@@ -23,9 +23,9 @@ export
 
 include("common.jl")
 include("linearreg.jl")
+include("regproblems.jl")
 include("solvers.jl")
 include("solve.jl")
 include("print.jl")
-include("regproblems.jl")
 
 end # module
