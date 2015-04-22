@@ -23,7 +23,6 @@ export
 	mlogisticreg,
 
 	# solve
-	RiskMinSolver,
 	GDSolver,
 	BFGSSolver
 
@@ -34,7 +33,6 @@ include("common.jl")
 include("linearreg.jl")
 include("regproblems.jl")
 include("optimbase.jl")
-include("solvers.jl")
 include("solve.jl")
 include("print.jl")
 

@@ -66,7 +66,33 @@ function value_and_grad!{T<:FloatingPoint}(f::RegularizedRiskFun{T}, g::StridedA
 end
 
 
-# Line search
+### Solution
+
+immutable Solution{Sol<:StridedArray}
+    sol::Sol
+    fval::Float64
+    niters::Int
+    converged::Bool
+end
+
+function Base.show(io::IO, r::Solution)
+    println(io, "RiskMinSolution:")
+    println(io, "- sol:       $(size(r.sol)) $(typeof(r.sol))")
+    println(io, "- fval:      $(r.fval)")
+    println(io, "- niters:    $(r.niters)")
+    println(io, "- converged: $(r.converged)")
+end
+
+
+### Solver
+
+abstract Solver
+
+abstract DescentSolver <: Solver
+abstract ProximalDescentSolver <: Solver
+
+
+### Line search
 
 function backtrack!{T<:FloatingPoint}(
     f::ObjectiveFun{T},     # objective function
@@ -95,7 +121,7 @@ function backtrack!{T<:FloatingPoint}(
 end
 
 
-# test convergence
+### test convergence
 
 test_convergence{T<:FloatingPoint}(θ::Array{T}, θpre::Array{T}, v::T, vpre::T, g::Array{T}, opt::Options) =
     abs(v - vpre) < convert(T, opt.ftol) ||
@@ -104,7 +130,7 @@ test_convergence{T<:FloatingPoint}(θ::Array{T}, θpre::Array{T}, v::T, vpre::T,
 
 
 
-# auxiliary functions
+### auxiliary functions
 
 function _l2diff{T<:FloatingPoint}(x::StridedArray{T}, y::StridedArray{T})
     @assert length(x) == length(y)
