@@ -1,43 +1,5 @@
 # Numerical solver
 
-## Options
-
-type Options
-    maxiter::Int        # maximum number of iterations
-    ftol::Float64       # function value change tolerance
-    xtol::Float64       # solution change tolerance
-    grtol::Float64      # gradient norm tolerance
-    armijo::Float64     # Armijo coefficient for line search
-    beta::Float64       # backtracking ratio
-    verbosity::Symbol   # verbosity (:none | :final | :iter)
-end
-
-function Options(;maxiter::Integer=200,
-                  ftol::Real=1.0e-6,
-                  xtol::Real=1.0e-8,
-                  grtol::Real=1.0e-8,
-                  armijo::Real=0.5,
-                  beta::Real=0.5,
-                  verbosity::Symbol=:none)
-
-     maxiter > 1 || error("maxiter must be an integer greater than 1.")
-     ftol > 0 || error("ftol must be a positive real value.")
-     xtol > 0 || error("xtol must be a positive real value.")
-     grtol > 0 || error("grtol must be a positive real value.")
-     0 < armijo < 1 || error("armijo must be a real value in (0, 1).")
-     0 < beta < 1 || error("beta must be a real value in (0, 1).")
-     (verbosity == :none || verbosity == :final || verbosity == :iter) ||
-         error("verbosity must be either :none, :final, or :iter.")
-
-     Options(convert(Int, maxiter),
-             convert(Float64, ftol),
-             convert(Float64, xtol),
-             convert(Float64, grtol),
-             convert(Float64, armijo),
-             convert(Float64, beta),
-             verbosity)
-end
-
 default_solver() = BFGSSolver()
 
 
@@ -62,23 +24,15 @@ end
 ## core solve! function
 
 function solve!{T<:FloatingPoint}(
-    rmodel::SupervisedRiskModel,    # the risk model
-    reg::Regularizer,               # the regularizer
-    θ::Array{T},                    # the solution (which would be updated inplace)
-    X::StridedArray{T},             # array of inputs
-    y::StridedArray,                # array of outputs
-    solver::RiskMinSolver,          # solver
-    options::Options,               # options to control the procedure
-    callback::Function)             # callback function
+    f::ObjectiveFun{T},        # the objective function
+    θ::Array{T},               # the solution (which would be updated inplace)
+    solver::RiskMinSolver,     # solver
+    options::Options,          # options to control the procedure
+    callback::Function)        # callback function
 
     ## extract arguments and options
 
     maxiter = options.maxiter
-    ftol = convert(T, options.ftol)
-    xtol = convert(T, options.xtol)
-    grtol = convert(T, options.grtol)
-    armijo = convert(T, options.armijo)
-    β = convert(T, options.beta)
     vbose = verbosity_level(options.verbosity)::Int
 
     ## prepare storage
@@ -92,7 +46,7 @@ function solve!{T<:FloatingPoint}(
     ## main loop
     t = 0
     converged = false
-    v, _ = value_and_grad!(rmodel, reg, g, θ, X, y)
+    v, _ = value_and_grad!(f, g, θ)
 
     if vbose >= VERBOSE_ITER
         print_iter_head()
@@ -107,27 +61,15 @@ function solve!{T<:FloatingPoint}(
         descent_dir!(solver, states, θ, g, p)
 
         # backtracking
-        dv = dot(vec(p), vec(g))
-        dv > zero(T) || error("The descent direction is invalid.")
-        α = one(T)
-        _xmcy!(θ2, θ, α, p)   # θ2 <- θ - α p
-        v2 = value(rmodel, θ2, X, y) + value(reg, θ2)
-        while v2 > v - armijo * α * dv
-            α > eps(T) || error("Failed to find a proper step size.")
-            α *= β
-            _xmcy!(θ2, θ, α, p)   # θ2 <- θ - α p
-            v2 = value(rmodel, θ2, X, y) + value(reg, θ2)
-        end
+        α = backtrack!(f, θ2, θ, v, g, p, one(T), options)
         θ, θ2 = θ2, θ  # swap current solution and previous solution
 
         # compute new gradient
-        v, _ = value_and_grad!(rmodel, reg, g2, θ, X, y)
+        v, _ = value_and_grad!(f, g2, θ)
         g, g2 = g2, g  # swap current gradient with previous gradient
 
         # test convergence
-        converged = abs(v - v_pre) < ftol ||
-                    vecnorm(g) < grtol ||
-                    _l2diff(θ, θ2) < xtol
+        converged = test_convergence(θ, θ2, v, v_pre, g, options)
 
         # update states (if necessary)
         if !converged
@@ -151,7 +93,7 @@ function solve!{T<:FloatingPoint}(
 end
 
 
-## higher level problem-solve functions
+### higher level problem-solve functions
 
 function solve{T<:FloatingPoint}(
     pb::Problem{T};
@@ -164,12 +106,14 @@ function solve{T<:FloatingPoint}(
     θ = isempty(init) ? initsol(pb) : copy(init)
 
     if has_bias(pb)
-        solve!(riskmodel(pred_with_bias(pb), loss(pb)), reg,
-            θ, inputs(pb), outputs(pb), solver, options, callback)
+        rmodel = riskmodel(pred_with_bias(pb), loss(pb))
+        f = RegularizedRiskFun(rmodel, reg, inputs(pb), outputs(pb))
+        solve!(f, θ, solver, options, callback)
 
     else
-        solve!(riskmodel(pred_without_bias(pb), loss(pb)), reg,
-            θ, inputs(pb), outputs(pb), solver, options, callback)
+        rmodel = riskmodel(pred_without_bias(pb), loss(pb))
+        f = RegularizedRiskFun(rmodel, reg, inputs(pb), outputs(pb))
+        solve!(f, θ, solver, options, callback)
 
     end::Solution{typeof(θ)}
 end

@@ -7,6 +7,7 @@ using ArrayViews
 
 import Base.LinAlg: BlasReal
 import Base.LinAlg.LAPACK: gels!, gelsy!, gelsd!
+import EmpiricalRisks: value, value_and_grad!
 
 export
 	# linearreg
@@ -32,6 +33,7 @@ export
 include("common.jl")
 include("linearreg.jl")
 include("regproblems.jl")
+include("optimbase.jl")
 include("solvers.jl")
 include("solve.jl")
 include("print.jl")
