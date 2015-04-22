@@ -38,7 +38,7 @@ function Options(;maxiter::Integer=200,
              verbosity)
 end
 
-default_solver() = GDSolver()
+default_solver() = BFGSSolver()
 
 
 ## Solution

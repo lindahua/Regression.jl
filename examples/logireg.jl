@@ -18,7 +18,7 @@ y = sign(X'w[1:d] + w[d+1] + 0.2 * randn(n))
 ret = solve(LogisticLoss(), X, y;
             bias=1.0,
             reg=SqrL2Reg(1.0e-2),
-            options=Options(verbosity=:iter, ftol=1.0e-5 * n))
+            options=Options(verbosity=:iter, grtol=1.0e-6 * n))
 
 println()
 

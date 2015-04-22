@@ -19,7 +19,7 @@ y = (W[:, 1:d] * X .+ W[:,d+1]) + 0.2 * randn(k, n)
 ret = solve(SumSqrLoss(), k, X, y;
             bias=1.0,
             reg=SqrL2Reg(1.0e-3),
-            options=Options(verbosity=:iter, ftol=1.0e-8 * n))
+            options=Options(verbosity=:iter, grtol=1.0e-6 * n))
 
 println()
 

@@ -69,7 +69,7 @@ function update_states!{T<:BlasReal}(::BFGSSolver, st::BFGSState{T},
 
     u = dot(s, y)
     c1 = (u + dot(y, z)) / (u * u)
-    c1 = one(T) / u
+    c2 = one(T) / u
 
     # update Λ
     @inbounds for j = 1:n, i = 1:n

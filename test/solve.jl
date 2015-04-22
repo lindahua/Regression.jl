@@ -8,11 +8,45 @@ srand(54321)  # ensure repeatable experiment
 ## auxiliary functions
 
 _relerr(x::Array, x0::Array) = sumabs2(x - x0) / sumabs2(x0)
-_corr(x::Array, x0::Array) = dot(vec(x), vec(x0)) / (vecnorm(x) * vecnorm(x0))
+_corrdist(x::Array, x0::Array) = 1.0 - dot(vec(x), vec(x0)) / (vecnorm(x) * vecnorm(x0))
 
 _classify(U::Matrix) = vec(mapslices(indmax, U, 1))
 
-_errrate(y::Array{Int}, y0::Array{Int}) = countnz(y .!= y0) / length(y0)
+function _errrate(pred::PredictionModel, X::Matrix, θ::Array, θ0::Array)
+    u0 = _classify(predict(pred, θ0, X))
+    u  = _classify(predict(pred, θ, X))
+    countnz(u .!= u0) / length(u0)
+end
+
+
+const _solvers = [GDSolver(), BFGSSolver()]
+
+
+function verify_solver(title, loss::Loss, X::Matrix, data,
+                       θg::Array, vcond::Function, thres::Real)
+    println("    $title")
+
+    dx = size(X, 1)
+    dθ = size(θg, ndims(θg))
+    b = dθ == dx ? 0.0 :
+        dθ == dx + 1 ? 1.0 :
+        error("Unmatched dimensions.")
+
+    for solv in _solvers
+        println("      - with solver $(typeof(solv))")
+        n = size(X, ndims(X))
+        ret = Regression.solve(loss, data...,
+                               bias=b,
+                               reg=SqrL2Reg(1.0e-4),
+                               solver=solv,
+                               options=Regression.Options(grtol=n * 1.0e-6))
+
+        @test isa(ret, Regression.Solution)
+        θe = ret.sol
+        @test vcond(θe, θg) < thres
+    end
+end
+
 
 ## Univariate loss
 
@@ -28,37 +62,17 @@ ua = u .+ wa[d+1]
 
 # test cases
 
-println("\twith LinearPred + SqrLoss")
+verify_solver("LinearPred + SqrLoss",
+    SqrLoss(), X, (X, u), w, _relerr, 1.0e-4)
 
-ret = Regression.solve(SqrLoss(), X, u; reg=SqrL2Reg(1.0e-4))
-@test isa(ret, Regression.Solution{Vector{Float64}})
-r = ret.sol
-@test size(r) == size(w)
-@test _relerr(r, w) < 1.0e-4
+verify_solver("AffinePred + SqrLoss",
+    SqrLoss(), X, (X, ua), wa, _relerr, 1.0e-4)
 
-println("\twith AffinePred + SqrLoss")
+verify_solver("LinearPred + LogisticLoss",
+    SqrLoss(), X, (X, u), w, _corrdist, 1.0e-3)
 
-ret = Regression.solve(SqrLoss(), X, ua; bias=1.0, reg=SqrL2Reg(1.0e-4))
-@test isa(ret, Regression.Solution{Vector{Float64}})
-r = ret.sol
-@test size(r) == size(wa)
-@test _relerr(r, wa) < 1.0e-4
-
-println("\twith LinearPred + LogisticLoss")
-
-ret = Regression.solve(LogisticLoss(), X, sign(u); reg=SqrL2Reg(1.0e-4))
-@test isa(ret, Regression.Solution{Vector{Float64}})
-r = ret.sol
-@test size(r) == size(w)
-@test abs(1.0 - _corr(r, w)) < 1.0e-3
-
-println("\twith AffinePred + LogisticLoss")
-
-ret = Regression.solve(LogisticLoss(), X, sign(ua); bias=1.0, reg=SqrL2Reg(1.0e-4))
-@test isa(ret, Regression.Solution{Vector{Float64}})
-r = ret.sol
-@test size(r) == size(wa)
-@test abs(1.0 - _corr(r, wa)) < 1.0e-3
+verify_solver("AffinePred + LogisticLoss",
+    SqrLoss(), X, (X, ua), wa, _corrdist, 1.0e-3)
 
 
 ## Multivariate loss
@@ -75,36 +89,18 @@ Ua = U .+ Wa[:,d+1]
 
 # test cases
 
-println("\twith MvLinearPred + SumSqrLoss")
+verify_solver("MvLinearPred + SumSqrLoss",
+    SumSqrLoss(), X, (k, X, U), W, _relerr, 1.0e-4)
 
-ret = Regression.solve(SumSqrLoss(), k, X, U; reg=SqrL2Reg(1.0e-4))
-@test isa(ret, Regression.Solution{Matrix{Float64}})
-R = ret.sol
-@test size(R) == size(W)
-@test _relerr(R, W) < 1.0e-4
+verify_solver("MvAffinePred + SumSqrLoss",
+    SumSqrLoss(), X, (k, X, Ua), Wa, _relerr, 1.0e-4)
 
-println("\twith MvAffinePred + SumSqrLoss")
+y = _classify(U)
+verify_solver("MvLinearPred + MultiLogisticLoss",
+    MultiLogisticLoss(), X, (k, X, y), W,
+        (θ, θ0) -> _errrate(MvLinearPred(d, k), X, θ, θ0), 0.02)
 
-ret = Regression.solve(SumSqrLoss(), k, X, Ua; bias=1.0, reg=SqrL2Reg(1.0e-4))
-@test isa(ret, Regression.Solution{Matrix{Float64}})
-R = ret.sol
-@test size(R) == size(Wa)
-@test _relerr(R, Wa) < 1.0e-4
-
-println("\twith MvLinearPred + MultiLogisticLoss")
-
-Y = _classify(U)
-ret = Regression.solve(MultiLogisticLoss(), k, X, Y; reg=SqrL2Reg(1.0e-4))
-R = ret.sol
-@test size(R) == size(W)
-Yr = _classify(predict(MvLinearPred(d, k), R, X))
-@test _errrate(Yr, Y) < 0.03
-
-println("\twith MvAffinePred + MultiLogisticLoss")
-
-Y = _classify(Ua)
-ret = Regression.solve(MultiLogisticLoss(), k, X, Y; bias=1.0, reg=SqrL2Reg(1.0e-4))
-R = ret.sol
-@test size(R) == size(Wa)
-Yr = _classify(predict(MvAffinePred(d, k), R, X))
-@test _errrate(Yr, Y) < 0.03
+ya = _classify(Ua)
+verify_solver("MvAffinePred + MultiLogisticLoss",
+    MultiLogisticLoss(), X, (k, X, ya), Wa,
+        (θ, θ0) -> _errrate(MvAffinePred(d, k), X, θ, θ0), 0.02)
