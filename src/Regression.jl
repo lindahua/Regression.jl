@@ -13,6 +13,14 @@ export
 	llsq,
 	ridgereg,
 
+	# regproblems
+	UnivariateRegression,
+	MultivariateRegression,
+
+	linearreg,
+	logisticreg,
+	mlogisticreg,
+
 	# solve
 	RiskMinSolver,
 	GDSolver,

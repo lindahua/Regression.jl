@@ -1,6 +1,7 @@
 tests = [
 	"common",
 	"linearreg",
+	"regproblems",
 	"solve"
 ]
 
