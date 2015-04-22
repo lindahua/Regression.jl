@@ -38,6 +38,7 @@ function verify_llsq(A::Matrix, y::VecOrMat, m::Symbol)
 	@test_approx_eq_eps x x2 1.0e-12
 end
 
+println("\ton llsq")
 for m in [:qrlq, :orth, :svd]
 	verify_llsq(A, y, m)
 	verify_llsq(A, Y, m)
@@ -68,5 +69,6 @@ function verify_ridgereg(A::Matrix, y::VecOrMat, r::Float64)
 	@test_approx_eq_eps x x2 1.0e-10
 end
 
+println("\ton ridgereg")
 verify_ridgereg(A, y, 0.6)
 verify_ridgereg(A, Y, 0.6)

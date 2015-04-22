@@ -1,6 +1,7 @@
 tests = [
 	"common",
-	"linearreg"
+	"linearreg",
+	"solve"
 ]
 
 for t in tests

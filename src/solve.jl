@@ -1,27 +1,5 @@
 # Numerical solver
 
-## Solvers
-
-abstract RiskMinSolver
-
-_prep_searchdir(::RiskMinSolver, g::StridedArray) = similar(g)
-
-# gradient descent
-
-type GDSolver <: RiskMinSolver
-end
-
-init_states(::GDSolver, θ) = nothing
-
-descent_dir!(::GDSolver, st::Nothing, θ::StridedArray, g::StridedArray, p::StridedArray) =
-    (is(p, g) || copy!(p, g); p)
-
-_prep_searchdir(::GDSolver, g::StridedArray) = g
-
-
-default_solver() = GDSolver()
-
-
 ## Options
 
 type Options
@@ -60,6 +38,8 @@ function Options(;maxiter::Integer=200,
              verbosity)
 end
 
+default_solver() = GDSolver()
+
 
 ## Solution
 
@@ -81,14 +61,14 @@ end
 
 ## Solve
 
-function solve!{T}(rmodel::SupervisedRiskModel,    # the risk model
-                   reg::Regularizer,               # the regularizer
-                   θ::Array{T},                    # the solution (which would be updated inplace)
-                   X::StridedArray{T},             # array of inputs
-                   y::StridedArray,                # array of outputs
-                   solver::RiskMinSolver,          # solver
-                   options::Options,               # options to control the procedure
-                   callback::Function)             # callback function
+function solve!{T<:FloatingPoint}(rmodel::SupervisedRiskModel,    # the risk model
+                                  reg::Regularizer,               # the regularizer
+                                  θ::Array{T},                    # the solution (which would be updated inplace)
+                                  X::StridedArray{T},             # array of inputs
+                                  y::StridedArray,                # array of outputs
+                                  solver::RiskMinSolver,          # solver
+                                  options::Options,               # options to control the procedure
+                                  callback::Function)             # callback function
 
     ## extract arguments and options
 
@@ -104,8 +84,9 @@ function solve!{T}(rmodel::SupervisedRiskModel,    # the risk model
 
     θ2 = similar(θ)    # tempoarily new parameter (linear search)
     g = similar(θ)     # gradient
+    g2 = similar(θ)    # another gradient
     p = _prep_searchdir(solver, g)
-    st = init_states(solver, θ)   # solver state
+    states = init_states(solver, θ)   # solver state
 
     ## main loop
     t = 0
@@ -122,7 +103,7 @@ function solve!{T}(rmodel::SupervisedRiskModel,    # the risk model
         v_pre = v
 
         # compute descent direction
-        descent_dir!(solver, st, θ, g, p)
+        descent_dir!(solver, states, θ, g, p)
 
         # backtracking
         dv = dot(vec(p), vec(g))
@@ -136,16 +117,21 @@ function solve!{T}(rmodel::SupervisedRiskModel,    # the risk model
             _xmcy!(θ2, θ, α, p)   # θ2 <- θ - α p
             v2 = value(rmodel, θ2, X, y) + value(reg, θ2)
         end
-
-        θ, θ2 = θ2, θ  # swap current solution and new solution
+        θ, θ2 = θ2, θ  # swap current solution and previous solution
 
         # compute new gradient
-        v, _ = value_and_grad!(rmodel, reg, g, θ, X, y)
+        v, _ = value_and_grad!(rmodel, reg, g2, θ, X, y)
+        g, g2 = g2, g  # swap current gradient with previous gradient
 
         # test convergence
         converged = abs(v - v_pre) < ftol ||
                     vecnorm(g) < grtol ||
                     _l2diff(θ, θ2) < xtol
+
+        # update states (if necessary)
+        if !converged
+            update_states!(solver, states, θ, θ2, g, g2)
+        end
 
         # print iteration
         if vbose >= VERBOSE_ITER

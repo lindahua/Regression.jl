@@ -15,13 +15,15 @@ export
 
 	# solve
 	RiskMinSolver,
-	GDSolver
+	GDSolver,
+	BFGSSolver
 
 
 # source files
 
 include("common.jl")
 include("linearreg.jl")
+include("solvers.jl")
 include("solve.jl")
 include("print.jl")
 include("regproblems.jl")
