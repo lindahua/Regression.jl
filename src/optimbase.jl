@@ -106,9 +106,8 @@ end
 ### Solver
 
 abstract Solver
-
 abstract DescentSolver <: Solver
-abstract ProximalDescentSolver <: Solver
+
 
 
 ### Line search
@@ -147,6 +146,9 @@ test_convergence{T<:FloatingPoint}(θ::Array{T}, θpre::Array{T}, v::T, vpre::T,
     vecnorm(g) < convert(T, opt.grtol) ||
     _l2diff(θ, θpre) < convert(T, opt.xtol)
 
+test_convergence{T<:FloatingPoint}(θ::Array{T}, θpre::Array{T}, v::T, vpre::T, opt::Options) =
+    abs(v - vpre) < convert(T, opt.ftol) ||
+    _l2diff(θ, θpre) < convert(T, opt.xtol)
 
 
 ### auxiliary functions

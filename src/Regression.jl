@@ -25,7 +25,11 @@ export
 	# solve
 	GD,
 	BFGS,
-	LBFGS
+	LBFGS,
+
+	# proxsolve
+	ProximalDescent,
+	ProxGD
 
 
 # source files
@@ -35,6 +39,7 @@ include("linearreg.jl")
 include("regproblems.jl")
 include("optimbase.jl")
 include("solve.jl")
+include("proxsolve.jl")
 include("print.jl")
 
 const default_solver = BFGS()

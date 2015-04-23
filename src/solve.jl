@@ -23,7 +23,6 @@ function _solve{T<:FloatingPoint}(
     end::Solution{typeof(θ)}
 end
 
-
 function solve{T<:FloatingPoint}(
     pb::Problem{T};
     reg::Regularizer=ZeroReg(),

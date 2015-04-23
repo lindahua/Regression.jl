@@ -2,7 +2,8 @@ tests = [
 	"common",
 	"linearreg",
 	"regproblems",
-	"solve"
+	"solve",
+	"lasso"
 ]
 
 for t in tests
