@@ -3,10 +3,10 @@ type GDSolver <: DescentSolver
 end
 
 function solve!{T<:FloatingPoint}(::GDSolver,
-    f::ObjectiveFun{T},        # the objective function
-    θ::Array{T},               # the solution (which would be updated inplace)
-    options::Options,          # options to control the procedure
-    callback::Function)        # callback function
+    f::Functional{T},       # the objective function
+    θ::Array{T},            # the solution (which would be updated inplace)
+    options::Options,       # options to control the procedure
+    callback::Function)     # callback function
 
     ## extract arguments and options
 

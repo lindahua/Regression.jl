@@ -40,26 +40,46 @@ end
 
 ### Objective Function
 
-abstract ObjectiveFun{T}
+abstract Functional{T}
 
-immutable RegularizedRiskFun{T,
-                             XT<:StridedArray,
-                             YT<:StridedArray,
-                             RModel<:RiskModel,
-                             Reg<:Regularizer} <: ObjectiveFun{T}
+immutable RiskFun{T,
+                  XT<:StridedArray,
+                  YT<:StridedArray,
+                  RModel<:RiskModel,
+                  Reg<:Regularizer} <: Functional{T}
+
     rmodel::RModel
-    reg::Regularizer
     X::XT
     Y::YT
 end
 
-RegularizedRiskFun{T<:FloatingPoint}(rmodel::RiskModel, reg::Regularizer, X::StridedArray{T}, Y::StridedArray) =
-    RegularizedRiskFun{T, typeof(X), typeof(Y), typeof(rmodel), typeof(reg)}(rmodel, reg, X, Y)
+RiskFun{T<:FloatingPoint}(rmodel::RiskModel, X::StridedArray{T}, Y::StridedArray) =
+    RiskFun{T, typeof(X), typeof(Y), typeof(rmodel)}(rmodel, reg, X, Y)
 
-value{T<:FloatingPoint}(f::RegularizedRiskFun{T}, θ::StridedArray{T}) =
+value{T<:FloatingPoint}(f::RiskFun{T}, θ::StridedArray{T}) = value(f.rmodel, θ, f.X, f.Y)
+
+value_and_grad!{T<:FloatingPoint}(f::RiskFun{T}, g::StridedArray{T}, θ::StridedArray{T}) =
+    value_and_addgrad!(f.rmodel, zero(T), g, one(T), θ, f.X, f.Y)
+
+
+immutable RegRiskFun{T,
+                     XT<:StridedArray,
+                     YT<:StridedArray,
+                     RModel<:RiskModel,
+                     Reg<:Regularizer} <: Functional{T}
+    rmodel::RModel
+    reg::Reg
+    X::XT
+    Y::YT
+end
+
+RegRiskFun{T<:FloatingPoint}(rmodel::RiskModel, reg::Regularizer, X::StridedArray{T}, Y::StridedArray) =
+    RegRiskFun{T, typeof(X), typeof(Y), typeof(rmodel), typeof(reg)}(rmodel, reg, X, Y)
+
+value{T<:FloatingPoint}(f::RegRiskFun{T}, θ::StridedArray{T}) =
     value(f.rmodel, θ, f.X, f.Y) + value(f.reg, θ)
 
-function value_and_grad!{T<:FloatingPoint}(f::RegularizedRiskFun{T}, g::StridedArray{T}, θ::StridedArray{T})
+function value_and_grad!{T<:FloatingPoint}(f::RegRiskFun{T}, g::StridedArray{T}, θ::StridedArray{T})
     v_risk, _ = value_and_addgrad!(f.rmodel, zero(T), g, one(T), θ, f.X, f.Y)
     v_regr, _ = value_and_addgrad!(f.reg, one(T), g, one(T), θ)
     return (v_risk + v_regr, g)
@@ -95,7 +115,7 @@ abstract ProximalDescentSolver <: Solver
 ### Line search
 
 function backtrack!{T<:FloatingPoint}(
-    f::ObjectiveFun{T},     # objective function
+    f::Functional{T},       # objective function
     θr::Array{T},           # destination solution
     θ::Array{T},            # last solution
     v::T,                   # objective value at θ

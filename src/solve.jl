@@ -21,12 +21,12 @@ function solve{T<:FloatingPoint}(
 
     if has_bias(pb)
         rmodel = riskmodel(pred_with_bias(pb), loss(pb))
-        f = RegularizedRiskFun(rmodel, reg, inputs(pb), outputs(pb))
+        f = RegRiskFun(rmodel, reg, inputs(pb), outputs(pb))
         solve!(solver, f, θ, options, callback)
 
     else
         rmodel = riskmodel(pred_without_bias(pb), loss(pb))
-        f = RegularizedRiskFun(rmodel, reg, inputs(pb), outputs(pb))
+        f = RegRiskFun(rmodel, reg, inputs(pb), outputs(pb))
         solve!(solver, f, θ, options, callback)
 
     end::Solution{typeof(θ)}
