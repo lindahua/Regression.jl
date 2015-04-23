@@ -45,8 +45,7 @@ abstract Functional{T}
 immutable RiskFun{T,
                   XT<:StridedArray,
                   YT<:StridedArray,
-                  RModel<:RiskModel,
-                  Reg<:Regularizer} <: Functional{T}
+                  RModel<:RiskModel} <: Functional{T}
 
     rmodel::RModel
     X::XT
@@ -54,7 +53,7 @@ immutable RiskFun{T,
 end
 
 RiskFun{T<:FloatingPoint}(rmodel::RiskModel, X::StridedArray{T}, Y::StridedArray) =
-    RiskFun{T, typeof(X), typeof(Y), typeof(rmodel)}(rmodel, reg, X, Y)
+    RiskFun{T, typeof(X), typeof(Y), typeof(rmodel)}(rmodel, X, Y)
 
 value{T<:FloatingPoint}(f::RiskFun{T}, θ::StridedArray{T}) = value(f.rmodel, θ, f.X, f.Y)
 
