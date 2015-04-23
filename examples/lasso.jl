@@ -7,12 +7,13 @@ import Regression: Options, solve
 
 d = 100
 num_zeros = 60
+n = 5000
+
 w = randn(d)
 iz = sort(randperm(d)[1:num_zeros])
 w[iz] = 0.0
 @assert countnz(w) == d - num_zeros
 
-n = 5000
 X = randn(d, n)
 y = X'w + 0.1 * randn(n)
 

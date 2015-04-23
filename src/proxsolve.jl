@@ -8,9 +8,10 @@ end
 ProximalDescent{S<:DescentSolver}(solver::S) = ProximalDescent{S}(solver)
 
 typealias ProxGD ProximalDescent{GD}
+typealias ProxAGD ProximalDescent{AGD}
 
-ProxGD() = ProximalDescent(GD())
-
+ProxGD() = ProximalDescent(GD())::ProxGD
+ProxAGD() = ProximalDescent(AGD())::ProxAGD
 
 ## higher level
 
@@ -63,10 +64,11 @@ function solve!{T<:FloatingPoint}(solver::ProximalDescent,
     t = 0
     converged = false
     vf, _ = value_and_grad!(f, g, θ)
-    v = vf + value(reg, θ)
+    vr = value(reg, θ)
+    v = vf + vr
 
     if vbose >= VERBOSE_ITER
-        print_iter_head()
+        print_iter_head(with_gnorm=false)
         print_iter(t, v)
     end
 
@@ -78,6 +80,14 @@ function solve!{T<:FloatingPoint}(solver::ProximalDescent,
         t += 1
         v_pre = v
 
+        # accelerate solution
+        if has_accelerate(dsolver)
+            accelerate!(dsolver, t, states, θ)
+            vf, _ = value_and_grad!(f, g, θ)
+            vr = value(reg, θ)
+            v = vf + vr
+        end
+
         # descent direction: g
         descent_dir!(dsolver, t, states, p, θ, θ2, g, g2)
 
@@ -87,18 +97,18 @@ function solve!{T<:FloatingPoint}(solver::ProximalDescent,
             α_pre = max(α_pre / β, one(T))
             α_cnt = 0
         end
-        α = prox_backtrack!(f, reg, θ2, θ, v, vf, g, p, α_pre, options)
+
+        # Note: proximal operator has been applied during backtrack
+        α = prox_backtrack!(f, reg, θ2, θ, vf, vr, g, p, α_pre, options)
         if α == α_pre
             α_cnt += 1
         end
         θ, θ2 = θ2, θ  # swap current solution and previous solution
 
-        # evaluation proximal w.r.t reg
-        prox!(reg, θ, θ, α)
-
         # compute new gradient
         vf, _ = value_and_grad!(f, g2, θ)
-        v = vf + value(reg, θ)
+        vr = value(reg, θ)
+        v = vf + vr
         g, g2 = g2, g  # swap current gradient with previous gradient
 
         # test convergence

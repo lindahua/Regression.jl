@@ -1,6 +1,6 @@
 
 
-function print_iter_head(;with_gnorm::Bool=false)
+function print_iter_head(;with_gnorm::Bool=true)
     if with_gnorm
         @printf("%5s   %12s   %12s   %12s   %12s\n",
             "Iter", "f.value", "f.change", "g.norm", "step")

@@ -143,31 +143,48 @@ function prox_backtrack!{T<:FloatingPoint}(
     reg::Regularizer,       # non-smoothed part (regularizer)
     θr::Array{T},           # destination solution
     θ::Array{T},            # last solution
-    v::T,                   # objective value at θ, w.r.t. f + reg
     vf::T,                  # objective value at θ, w.r.t. f
-    g::Array{T},           # gradient at θ, w.r.t. f
+    vr::T,                  # regularization value
+    g::Array{T},            # gradient at θ, w.r.t. f
     p::Array{T},            # descent direction
     α::T,                   # initial step size
     opts::Options)          # options
 
+    # debug
+    # g_ = similar(g)
+    # vf_, _ = value_and_grad!(f, g_, θ)
+    # vr_ = value(reg, θ)
+    # @assert vecnorm(g - g_) < 1.0e-12
+    # @assert abs(vf - vf_) < 1.0e-12
+    # @assert abs(vr - vr_) < 1.0e-12
+    # @assert vecnorm(p - g) < 1.0e-12
+
+    armijo = opts.armijo
     β = convert(T, opts.beta)
     dv = dot(vec(p), vec(g))
     sqr_pnorm = sumabs2(p)
+    vr = value(reg, θ)
+    # @show dv
 
-    while true
+    found = false
+    while !found
         _xmcy!(θr, θ, α, p)  # θr <- θ - α p
+        prox!(reg, θr, θr, α)
+        vf2 = value(f, θr)
         vr2 = value(reg, θr)
-
-        if isfinite(vr2)
-            vf2 = value(f, θr)
-            τ = vf - α * dv + (α/2) * sqr_pnorm
-            if vf2 < τ && vf2 + vr2 < v
-                break
+        # τ = vf - α * dv + (α/2) * sqr_pnorm + vr
+        if vf2 + vr2 < vf + vr
+            found = true
+        end
+        if !found
+            if α > eps(T)
+                α *= β
+            else
+                error("Failed to find a proper step size.")
             end
         end
-        α > eps(T) || error("Failed to find a proper step size.")
-        α *= β
     end
+
     return α
 end
 

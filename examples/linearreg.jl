@@ -17,6 +17,7 @@ Y = (W[:, 1:d] * X .+ W[:,d+1]) + 0.2 * randn(k, n)
 # Solve
 
 ret = solve(linearreg(X, Y; bias=1.0);
+            solver=GD(),
             reg=SqrL2Reg(1.0e-3),
             options=Options(verbosity=:iter, grtol=1.0e-6 * n))
 

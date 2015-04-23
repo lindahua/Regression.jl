@@ -24,12 +24,14 @@ export
 
 	# solve
 	GD,
+	AGD,
 	BFGS,
 	LBFGS,
 
 	# proxsolve
 	ProximalDescent,
-	ProxGD
+	ProxGD,
+	ProxAGD
 
 
 # source files

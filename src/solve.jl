@@ -39,6 +39,7 @@ end
 ### Specific solvers
 
 prep_dir(::Solver, g::Array) = similar(g)
+has_accelerate(::Solver) = false
 
 function solve!{T<:FloatingPoint}(solver::DescentSolver,
     f::Functional{T},       # the objective function
@@ -73,6 +74,12 @@ function solve!{T<:FloatingPoint}(solver::DescentSolver,
     while !converged && t < maxiter
         t += 1
         v_pre = v
+
+        # accelerate solution
+        if has_accelerate(solver)
+            accelerate!(solver, t, states, θ)
+            v, _ = value_and_grad!(f, g, θ)
+        end
 
         # descent direction: g
         descent_dir!(solver, t, states, p, θ, θ2, g, g2)
@@ -111,14 +118,59 @@ type GD <: DescentSolver
 end
 
 Base.show(io::IO, ::GD) = print(io, "GD")
-
-prep_dir(::GD, g::Array) = g
-
 init_states(::GD, θ, g) = nothing
 
-descent_dir!{T<:Real}(::GD, t::Int, states, p::Array{T},
+type AGD <: DescentSolver   # Accelerated GD
+end
+
+type AGDStates{T}
+    d::Int
+    τ::T
+    xpre::Vector{T}
+    y::Vector{T}
+end
+
+Base.show(io::IO, ::AGD) = print(io, "AGD")
+function init_states{T<:Real}(::AGD, θ::Array{T}, g::Array{T})
+    d = length(θ)
+    length(g) == d || throw(DimensionMismatch())
+    AGDStates{T}(d, one(T), Array(T, d), Array(T, d))
+end
+
+prep_dir(::Union(GD,AGD), g::Array) = g
+
+descent_dir!{T<:Real}(::Union(GD,AGD), t::Int, states, p::Array{T},
                       θ::Array{T}, θp::Array{T}, g::Array{T}, gp::Array{T}) =
     (is(p, g) || copy!(p, g); p)
+
+has_accelerate(::AGD) = true
+function accelerate!{T}(::AGD, t::Int, states::AGDStates{T}, x::Array{T})
+    τ = states.τ
+    xpre = states.xpre
+    y = states.y
+
+    # compute y
+    if t > 1
+        d = states.d
+        τ2 = (one(T) + sqrt(one(T) + 4 * abs2(τ))) * convert(T, 0.5)
+        c = (τ - one(T)) / τ2
+        @inbounds for i = 1:d
+            x_i = x[i]
+            y[i] = x_i + c * (x_i - xpre[i])
+        end
+        # @show τ2
+        states.τ = τ2
+    end
+
+    # store current x as xpre
+    copy!(xpre, x)
+
+    # x <- y
+    if t > 1
+        copy!(x, y)
+    end
+    x
+end
 
 
 ## BFGS Solver
