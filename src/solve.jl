@@ -105,24 +105,29 @@ function solve!{T<:FloatingPoint}(solver::DescentSolver,
     return Solution(θ, v, t, converged)
 end
 
-## GDSolver
 
-type GDSolver <: DescentSolver
+## Gradient Descent Solver
+
+type GD <: DescentSolver
 end
 
-prep_dir(::GDSolver, g::Array) = g
+Base.show(io::IO, ::GD) = print(io, "GD")
 
-init_states(::GDSolver, θ, g) = nothing
+prep_dir(::GD, g::Array) = g
 
-descent_dir!{T<:Real}(::GDSolver, t::Int, states, p::Array{T},
+init_states(::GD, θ, g) = nothing
+
+descent_dir!{T<:Real}(::GD, t::Int, states, p::Array{T},
                       θ::Array{T}, θp::Array{T}, g::Array{T}, gp::Array{T}) =
-    is(p, g) || copy!(p, g)
+    (is(p, g) || copy!(p, g); p)
 
 
-## BFGSSolver
+## BFGS Solver
 
-type BFGSSolver <: DescentSolver
+type BFGS <: DescentSolver
 end
+
+Base.show(io::IO, ::BFGS) = print(io, "BFGS")
 
 immutable BFGSStates{T}
     d::Int
@@ -132,12 +137,13 @@ immutable BFGSStates{T}
     z::Vector{T}
 end
 
-function init_states{T<:Real}(::BFGSSolver, θ::Array{T}, g::Array{T})
+function init_states{T<:Real}(::BFGS, θ::Array{T}, g::Array{T})
     d = length(θ)
+    length(g) == d || throw(DimensionMismatch())
     BFGSStates{T}(d, eye(T, d), Array(T, d), Array(T, d), Array(T, d))
 end
 
-function descent_dir!{T<:Real}(::BFGSSolver, t::Int, states::BFGSStates{T}, p::Array{T},
+function descent_dir!{T<:Real}(::BFGS, t::Int, states::BFGSStates{T}, p::Array{T},
                                θ::Array{T}, θp::Array{T}, g::Array{T}, gp::Array{T})
     if t > 1
         d = states.d
@@ -175,4 +181,75 @@ function descent_dir!{T<:Real}(::BFGSSolver, t::Int, states::BFGSStates{T}, p::A
     else
         copy!(p, g)
     end
+    p
+end
+
+
+## L-BFGS Solver
+
+immutable LBFGS <: DescentSolver
+    m::Int    # the numbe of memorized steps
+end
+
+Base.show(io::IO, s::LBFGS) = print(io, "LBFGS($(s.m))")
+
+immutable LBFGSStates{T}
+    d::Int
+    Δx::Matrix{T}
+    Δg::Matrix{T}
+    ρ::Vector{T}
+    α::Vector{T}
+    q::Vector{T}
+end
+
+function init_states{T<:Real}(solver::LBFGS, θ::Array{T}, g::Array{T})
+    d = length(θ)
+    length(g) == d || throw(DimensionMismatch())
+    m = solver.m
+    LBFGSStates{T}(d,
+        zeros(T, d, m),     # Δx
+        zeros(T, d, m),     # Δg
+        zeros(T, m),        # ρ
+        zeros(T, m),        # α
+        zeros(T, d))        # q
+end
+
+function descent_dir!{T<:Real}(solver::LBFGS, t::Int, states::LBFGSStates{T}, p::Array{T},
+                               θ::Array{T}, θp::Array{T}, g::Array{T}, gp::Array{T})
+
+    if t > 1
+        # extract fields
+        m = solver.m
+        d = states.d
+        Δx = states.Δx
+        Δg = states.Δg
+        ρ = states.ρ
+        α = states.α
+        q = states.q
+        p_ = vec(p)
+
+        # q <- g
+        copy!(q, vec(g))
+
+        # backward pass
+        h = min(t-1, m)
+        for idx = t-1:-1:t-h
+            i = mod1(idx, m)
+            α[i] = ρ[i] * dot(view(Δx,:,i), q)
+            axpy!(-α[i], view(Δg,:,i), q)
+        end
+
+        # p <- q
+        copy!(p_, q)
+
+        # forward pass
+        for idx = t-h:t-1
+            i = mod1(idx, m)
+            β = ρ[i] * dot(view(Δg,:,i), p_)
+            axpy!(α[i] - β, p_, view(Δx, :, i))
+        end
+    else
+        copy!(p, g)
+    end
+    p
 end

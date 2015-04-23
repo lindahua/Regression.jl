@@ -19,8 +19,7 @@ function _errrate(pred::PredictionModel, X::Matrix, θ::Array, θ0::Array)
 end
 
 
-const _solvers = [GDSolver(), BFGSSolver()]
-
+const _solvers = [GD(), BFGS(), LBFGS(6)]
 
 function verify_solver(title, loss::Loss, data,
                        θg::Array, vcond::Function, thres::Real)
@@ -37,7 +36,7 @@ function verify_solver(title, loss::Loss, data,
                           MultivariateRegression(loss, data...; bias=b)
 
     for solv in _solvers
-        println("      - with solver $(typeof(solv))")
+        println("      - with solver $(solv)")
         n = size(X, ndims(X))
         ret = Regression.solve(pb;
                                reg=SqrL2Reg(1.0e-4),

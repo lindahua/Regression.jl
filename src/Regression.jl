@@ -5,7 +5,7 @@ using Reexport
 using ArrayViews
 @reexport using EmpiricalRisks
 
-import Base.LinAlg: BlasReal
+import Base.LinAlg: BlasReal, axpy!
 import Base.LinAlg.LAPACK: gels!, gelsy!, gelsd!
 import EmpiricalRisks: value, value_and_grad!
 
@@ -23,8 +23,9 @@ export
 	mlogisticreg,
 
 	# solve
-	GDSolver,
-	BFGSSolver
+	GD,
+	BFGS,
+	LBFGS
 
 
 # source files
@@ -36,6 +37,6 @@ include("optimbase.jl")
 include("solve.jl")
 include("print.jl")
 
-const default_solver = BFGSSolver()
+const default_solver = BFGS()
 
 end # module
