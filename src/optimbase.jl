@@ -138,6 +138,41 @@ function backtrack!{T<:FloatingPoint}(
     return α
 end
 
+function prox_backtrack!{T<:FloatingPoint}(
+    f::Functional{T},       # smooth-part of the objective function
+    reg::Regularizer,       # non-smoothed part (regularizer)
+    θr::Array{T},           # destination solution
+    θ::Array{T},            # last solution
+    v::T,                   # objective value at θ, w.r.t. f + reg
+    vf::T,                  # objective value at θ, w.r.t. f
+    g::Array{T},           # gradient at θ, w.r.t. f
+    p::Array{T},            # descent direction
+    α::T,                   # initial step size
+    opts::Options)          # options
+
+    β = convert(T, opts.beta)
+    dv = dot(vec(p), vec(g))
+    sqr_pnorm = sumabs2(p)
+
+    while true
+        _xmcy!(θr, θ, α, p)  # θr <- θ - α p
+        vr2 = value(reg, θr)
+
+        if isfinite(vr2)
+            vf2 = value(f, θr)
+            τ = vf - α * dv + (α/2) * sqr_pnorm
+            if vf2 < τ && vf2 + vr2 < v
+                break
+            end
+        end
+        α > eps(T) || error("Failed to find a proper step size.")
+        α *= β
+    end
+    return α
+end
+
+
+
 
 ### test convergence
 
@@ -153,14 +188,17 @@ test_convergence{T<:FloatingPoint}(θ::Array{T}, θpre::Array{T}, v::T, vpre::T,
 
 ### auxiliary functions
 
-function _l2diff{T<:FloatingPoint}(x::StridedArray{T}, y::StridedArray{T})
+function _sqrl2diff{T<:FloatingPoint}(x::StridedArray{T}, y::StridedArray{T})
     @assert length(x) == length(y)
     s = zero(T)
     @inbounds for i = 1:length(x)
         s += abs2(x[i] - y[i])
     end
-    return sqrt(s)
+    return s
 end
+
+_l2diff{T<:FloatingPoint}(x::StridedArray{T}, y::StridedArray{T}) =
+    sqrt(_sqrl2diff(x, y))
 
 function _xmcy!{T<:Real}(r::Array{T}, x::Array{T}, c::T, y::Array{T})
     @inbounds for i = 1:length(x)

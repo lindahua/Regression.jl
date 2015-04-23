@@ -50,6 +50,7 @@ function solve!{T<:FloatingPoint}(solver::ProximalDescent,
     dsolver = solver.dsolver
     maxiter = options.maxiter
     vbose = verbosity_level(options.verbosity)::Int
+    β = options.beta
 
     ## prepare storage
 
@@ -70,6 +71,8 @@ function solve!{T<:FloatingPoint}(solver::ProximalDescent,
     end
 
     states = init_states(dsolver, θ, g)
+    α = one(T)
+    α_cnt = 0
 
     while !converged && t < maxiter
         t += 1
@@ -79,7 +82,15 @@ function solve!{T<:FloatingPoint}(solver::ProximalDescent,
         descent_dir!(dsolver, t, states, p, θ, θ2, g, g2)
 
         # backtracking
-        α = backtrack!(f, θ2, θ, vf, g, p, one(T), options)
+        α_pre = α
+        if α_cnt > 3  # if α stays there for a while, we may begin with a bigger step
+            α_pre = max(α_pre / β, one(T))
+            α_cnt = 0
+        end
+        α = prox_backtrack!(f, reg, θ2, θ, v, vf, g, p, α_pre, options)
+        if α == α_pre
+            α_cnt += 1
+        end
         θ, θ2 = θ2, θ  # swap current solution and previous solution
 
         # evaluation proximal w.r.t reg
