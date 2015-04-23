@@ -36,4 +36,6 @@ include("optimbase.jl")
 include("solve.jl")
 include("print.jl")
 
+const default_solver = BFGSSolver()
+
 end # module
