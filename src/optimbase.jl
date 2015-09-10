@@ -57,8 +57,14 @@ RiskFun{T<:FloatingPoint}(rmodel::RiskModel, X::StridedArray{T}, Y::StridedArray
 
 value{T<:FloatingPoint}(f::RiskFun{T}, θ::StridedArray{T}) = value(f.rmodel, θ, f.X, f.Y)
 
+value!{T<:FloatingPoint}(buffer, f::RiskFun{T}, θ::StridedArray{T}) = 
+    value!(buffer, f.rmodel, θ, f.X, f.Y)
+
 value_and_grad!{T<:FloatingPoint}(f::RiskFun{T}, g::StridedArray{T}, θ::StridedArray{T}) =
     value_and_addgrad!(f.rmodel, zero(T), g, one(T), θ, f.X, f.Y)
+
+value_and_grad!{T<:FloatingPoint}(buffer, f::RiskFun{T}, g::StridedArray{T}, θ::StridedArray{T}) =
+    value_and_addgrad!(buffer, f.rmodel, zero(T), g, one(T), θ, f.X, f.Y)
 
 
 immutable RegRiskFun{T,
@@ -78,8 +84,17 @@ RegRiskFun{T<:FloatingPoint}(rmodel::RiskModel, reg::Regularizer, X::StridedArra
 value{T<:FloatingPoint}(f::RegRiskFun{T}, θ::StridedArray{T}) =
     value(f.rmodel, θ, f.X, f.Y) + value(f.reg, θ)
 
+value!{T<:FloatingPoint}(buffer, f::RegRiskFun{T}, θ::StridedArray{T}) =
+    value!(buffer, f.rmodel, θ, f.X, f.Y) + value(f.reg, θ)
+
 function value_and_grad!{T<:FloatingPoint}(f::RegRiskFun{T}, g::StridedArray{T}, θ::StridedArray{T})
     v_risk, _ = value_and_addgrad!(f.rmodel, zero(T), g, one(T), θ, f.X, f.Y)
+    v_regr, _ = value_and_addgrad!(f.reg, one(T), g, one(T), θ)
+    return (v_risk + v_regr, g)
+end
+
+function value_and_grad!{T<:FloatingPoint}(buffer, f::RegRiskFun{T}, g::StridedArray{T}, θ::StridedArray{T})
+    v_risk, _ = value_and_addgrad!(buffer, f.rmodel, zero(T), g, one(T), θ, f.X, f.Y)
     v_regr, _ = value_and_addgrad!(f.reg, one(T), g, one(T), θ)
     return (v_risk + v_regr, g)
 end
@@ -113,6 +128,7 @@ abstract DescentSolver <: Solver
 ### Line search
 
 function backtrack!{T<:FloatingPoint}(
+    buffer,
     f::Functional{T},       # objective function
     θr::Array{T},           # destination solution
     θ::Array{T},            # last solution
@@ -128,12 +144,12 @@ function backtrack!{T<:FloatingPoint}(
     dv > zero(T) || error("The descent direction is invalid.")
 
     _xmcy!(θr, θ, α, p)   # θr <- θ - α p
-    v2 = value(f, θr)
+    v2 = value!(buffer, f, θr)
     while v2 > v - armijo * α * dv
         α > eps(T) || error("Failed to find a proper step size.")
         α *= β
         _xmcy!(θr, θ, α, p)   # θr <- θ - α p
-        v2 = value(f, θr)
+        v2 = value!(buffer, f, θr)
     end
     return α
 end

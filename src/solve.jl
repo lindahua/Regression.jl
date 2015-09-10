@@ -59,10 +59,12 @@ function solve!{T<:FloatingPoint}(solver::DescentSolver,
     g2 = similar(θ)    # another gradient
     p = prep_dir(solver, g)
 
+    buffer = ndims(θ) == 2 ? zeros(size(θ,1), size(f.X,2)) : zeros(size(f.X,2))
+
     ## main loop
     t = 0
     converged = false
-    v, _ = value_and_grad!(f, g, θ)
+    v, _ = value_and_grad!(buffer, f, g, θ)
 
     if vbose >= VERBOSE_ITER
         print_iter_head()
@@ -78,18 +80,18 @@ function solve!{T<:FloatingPoint}(solver::DescentSolver,
         # accelerate solution
         if has_accelerate(solver)
             accelerate!(solver, t, states, θ)
-            v, _ = value_and_grad!(f, g, θ)
+            v, _ = value_and_grad!(buffer, f, g, θ)
         end
 
         # descent direction: g
         descent_dir!(solver, t, states, p, θ, θ2, g, g2)
 
         # backtracking
-        α = backtrack!(f, θ2, θ, v, g, p, one(T), options)
+        α = backtrack!(buffer, f, θ2, θ, v, g, p, one(T), options)
         θ, θ2 = θ2, θ  # swap current solution and previous solution
 
         # compute new gradient
-        v, _ = value_and_grad!(f, g2, θ)
+        v, _ = value_and_grad!(buffer, f, g2, θ)
         g, g2 = g2, g  # swap current gradient with previous gradient
 
         # test convergence

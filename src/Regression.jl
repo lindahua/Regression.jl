@@ -7,7 +7,7 @@ using ArrayViews
 
 import Base.LinAlg: BlasReal, axpy!
 import Base.LinAlg.LAPACK: gels!, gelsy!, gelsd!
-import EmpiricalRisks: value, value_and_grad!
+import EmpiricalRisks: value, value!, value_and_grad!
 
 export
 	# linearreg
