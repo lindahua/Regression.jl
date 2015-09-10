@@ -2,4 +2,4 @@ julia 0.3
 Reexport
 Compat 0.4.1
 ArrayViews 0.6.0
-EmpiricalRisks 0.2.3
+EmpiricalRisks 0.2.4
