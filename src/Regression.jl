@@ -1,6 +1,5 @@
 module Regression
 
-using Compat
 using Reexport
 using ArrayViews
 @reexport using EmpiricalRisks

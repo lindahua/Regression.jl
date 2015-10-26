@@ -15,7 +15,7 @@ ProxAGD() = ProximalDescent(AGD())::ProxAGD
 
 ## higher level
 
-function _solve{T<:FloatingPoint}(
+function _solve{T<:AbstractFloat}(
     pb::Problem{T},
     reg::Regularizer,
     θ::Array{T},
@@ -39,7 +39,7 @@ end
 
 ## core skeleton
 
-function solve!{T<:FloatingPoint}(solver::ProximalDescent,
+function solve!{T<:AbstractFloat}(solver::ProximalDescent,
     f::Functional{T},       # the objective function (smooth part)
     reg::Regularizer,       # the regularizer (non-smooth part)
     θ::Array{T},            # the solution (which would be updated inplace)

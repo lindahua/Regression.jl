@@ -2,7 +2,7 @@
 
 ### higher level problem-solve functions
 
-function _solve{T<:FloatingPoint}(
+function _solve{T<:AbstractFloat}(
     pb::Problem{T},
     reg::Regularizer,
     θ::Array{T},
@@ -23,7 +23,7 @@ function _solve{T<:FloatingPoint}(
     end::Solution{typeof(θ)}
 end
 
-function solve{T<:FloatingPoint}(
+function solve{T<:AbstractFloat}(
     pb::Problem{T};
     reg::Regularizer=ZeroReg(),
     init::StridedArray{T}=T[],
@@ -41,7 +41,7 @@ end
 prep_dir(::Solver, g::Array) = similar(g)
 has_accelerate(::Solver) = false
 
-function solve!{T<:FloatingPoint}(solver::DescentSolver,
+function solve!{T<:AbstractFloat}(solver::DescentSolver,
     f::Functional{T},       # the objective function
     θ::Array{T},            # the solution (which would be updated inplace)
     options::Options,       # options to control the procedure
@@ -139,9 +139,9 @@ function init_states{T<:Real}(::AGD, θ::Array{T}, g::Array{T})
     AGDStates{T}(d, one(T), Array(T, d), Array(T, d))
 end
 
-prep_dir(::Union(GD,AGD), g::Array) = g
+prep_dir(::Union{GD,AGD}, g::Array) = g
 
-descent_dir!{T<:Real}(::Union(GD,AGD), t::Int, states, p::Array{T},
+descent_dir!{T<:Real}(::Union{GD,AGD}, t::Int, states, p::Array{T},
                       θ::Array{T}, θp::Array{T}, g::Array{T}, gp::Array{T}) =
     (is(p, g) || copy!(p, g); p)
 

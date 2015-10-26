@@ -5,7 +5,7 @@ abstract Problem{T}
 ### Univariate Prediction Problem
 
 immutable UnivariateRegression{L<:UnivariateLoss,
-                               T<:FloatingPoint,
+                               T<:AbstractFloat,
                                XT<:StridedMatrix,
                                YT<:StridedVector} <: Problem{T}
     loss::L
@@ -16,7 +16,7 @@ immutable UnivariateRegression{L<:UnivariateLoss,
     Y::YT
 end
 
-function UnivariateRegression{T<:FloatingPoint}(loss::UnivariateLoss,
+function UnivariateRegression{T<:AbstractFloat}(loss::UnivariateLoss,
                                                 X::StridedMatrix{T},
                                                 Y::StridedVector;
                                                 bias::Real=0.0)
@@ -40,10 +40,10 @@ initsol{L,T}(pb::UnivariateRegression{L,T}) = zeros(T, has_bias(pb) ? pb.d + 1: 
 
 # specific problems
 
-linearreg{T<:FloatingPoint}(X::StridedMatrix{T}, y::StridedVector{T}; bias::Real=0.0) =
+linearreg{T<:AbstractFloat}(X::StridedMatrix{T}, y::StridedVector{T}; bias::Real=0.0) =
     UnivariateRegression(SqrLoss(), X, y; bias=bias)
 
-logisticreg{T<:FloatingPoint}(X::StridedMatrix{T}, y::StridedVector; bias::Real=0.0) =
+logisticreg{T<:AbstractFloat}(X::StridedMatrix{T}, y::StridedVector; bias::Real=0.0) =
     UnivariateRegression(LogisticLoss(), X, convert(Vector{T}, y); bias=bias)
 
 
@@ -51,7 +51,7 @@ logisticreg{T<:FloatingPoint}(X::StridedMatrix{T}, y::StridedVector; bias::Real=
 ### Multivariate Prediction Problem
 
 immutable MultivariateRegression{L<:MultivariateLoss,
-                                 T<:FloatingPoint,
+                                 T<:AbstractFloat,
                                  XT<:StridedMatrix,
                                  YT<:StridedVecOrMat} <: Problem{T}
     loss::L
@@ -63,7 +63,7 @@ immutable MultivariateRegression{L<:MultivariateLoss,
     Y::YT
 end
 
-function MultivariateRegression{T<:FloatingPoint}(loss::MultivariateLoss,
+function MultivariateRegression{T<:AbstractFloat}(loss::MultivariateLoss,
                                                   X::StridedMatrix{T},
                                                   Y::StridedVecOrMat,
                                                   k::Int;

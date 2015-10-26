@@ -52,18 +52,18 @@ immutable RiskFun{T,
     Y::YT
 end
 
-RiskFun{T<:FloatingPoint}(rmodel::RiskModel, X::StridedArray{T}, Y::StridedArray) =
+RiskFun{T<:AbstractFloat}(rmodel::RiskModel, X::StridedArray{T}, Y::StridedArray) =
     RiskFun{T, typeof(X), typeof(Y), typeof(rmodel)}(rmodel, X, Y)
 
-value{T<:FloatingPoint}(f::RiskFun{T}, θ::StridedArray{T}) = value(f.rmodel, θ, f.X, f.Y)
+value{T<:AbstractFloat}(f::RiskFun{T}, θ::StridedArray{T}) = value(f.rmodel, θ, f.X, f.Y)
 
-value!{T<:FloatingPoint}(buffer, f::RiskFun{T}, θ::StridedArray{T}) = 
+value!{T<:AbstractFloat}(buffer, f::RiskFun{T}, θ::StridedArray{T}) = 
     value!(buffer, f.rmodel, θ, f.X, f.Y)
 
-value_and_grad!{T<:FloatingPoint}(f::RiskFun{T}, g::StridedArray{T}, θ::StridedArray{T}) =
+value_and_grad!{T<:AbstractFloat}(f::RiskFun{T}, g::StridedArray{T}, θ::StridedArray{T}) =
     value_and_addgrad!(f.rmodel, zero(T), g, one(T), θ, f.X, f.Y)
 
-value_and_grad!{T<:FloatingPoint}(buffer, f::RiskFun{T}, g::StridedArray{T}, θ::StridedArray{T}) =
+value_and_grad!{T<:AbstractFloat}(buffer, f::RiskFun{T}, g::StridedArray{T}, θ::StridedArray{T}) =
     value_and_addgrad!(buffer, f.rmodel, zero(T), g, one(T), θ, f.X, f.Y)
 
 
@@ -78,22 +78,22 @@ immutable RegRiskFun{T,
     Y::YT
 end
 
-RegRiskFun{T<:FloatingPoint}(rmodel::RiskModel, reg::Regularizer, X::StridedArray{T}, Y::StridedArray) =
+RegRiskFun{T<:AbstractFloat}(rmodel::RiskModel, reg::Regularizer, X::StridedArray{T}, Y::StridedArray) =
     RegRiskFun{T, typeof(X), typeof(Y), typeof(rmodel), typeof(reg)}(rmodel, reg, X, Y)
 
-value{T<:FloatingPoint}(f::RegRiskFun{T}, θ::StridedArray{T}) =
+value{T<:AbstractFloat}(f::RegRiskFun{T}, θ::StridedArray{T}) =
     value(f.rmodel, θ, f.X, f.Y) + value(f.reg, θ)
 
-value!{T<:FloatingPoint}(buffer, f::RegRiskFun{T}, θ::StridedArray{T}) =
+value!{T<:AbstractFloat}(buffer, f::RegRiskFun{T}, θ::StridedArray{T}) =
     value!(buffer, f.rmodel, θ, f.X, f.Y) + value(f.reg, θ)
 
-function value_and_grad!{T<:FloatingPoint}(f::RegRiskFun{T}, g::StridedArray{T}, θ::StridedArray{T})
+function value_and_grad!{T<:AbstractFloat}(f::RegRiskFun{T}, g::StridedArray{T}, θ::StridedArray{T})
     v_risk, _ = value_and_addgrad!(f.rmodel, zero(T), g, one(T), θ, f.X, f.Y)
     v_regr, _ = value_and_addgrad!(f.reg, one(T), g, one(T), θ)
     return (v_risk + v_regr, g)
 end
 
-function value_and_grad!{T<:FloatingPoint}(buffer, f::RegRiskFun{T}, g::StridedArray{T}, θ::StridedArray{T})
+function value_and_grad!{T<:AbstractFloat}(buffer, f::RegRiskFun{T}, g::StridedArray{T}, θ::StridedArray{T})
     v_risk, _ = value_and_addgrad!(buffer, f.rmodel, zero(T), g, one(T), θ, f.X, f.Y)
     v_regr, _ = value_and_addgrad!(f.reg, one(T), g, one(T), θ)
     return (v_risk + v_regr, g)
@@ -127,7 +127,7 @@ abstract DescentSolver <: Solver
 
 ### Line search
 
-function backtrack!{T<:FloatingPoint}(
+function backtrack!{T<:AbstractFloat}(
     buffer,
     f::Functional{T},       # objective function
     θr::Array{T},           # destination solution
@@ -154,7 +154,7 @@ function backtrack!{T<:FloatingPoint}(
     return α
 end
 
-function prox_backtrack!{T<:FloatingPoint}(
+function prox_backtrack!{T<:AbstractFloat}(
     f::Functional{T},       # smooth-part of the objective function
     reg::Regularizer,       # non-smoothed part (regularizer)
     θr::Array{T},           # destination solution
@@ -209,19 +209,19 @@ end
 
 ### test convergence
 
-test_convergence{T<:FloatingPoint}(θ::Array{T}, θpre::Array{T}, v::T, vpre::T, g::Array{T}, opt::Options) =
+test_convergence{T<:AbstractFloat}(θ::Array{T}, θpre::Array{T}, v::T, vpre::T, g::Array{T}, opt::Options) =
     abs(v - vpre) < convert(T, opt.ftol) ||
     vecnorm(g) < convert(T, opt.grtol) ||
     _l2diff(θ, θpre) < convert(T, opt.xtol)
 
-test_convergence{T<:FloatingPoint}(θ::Array{T}, θpre::Array{T}, v::T, vpre::T, opt::Options) =
+test_convergence{T<:AbstractFloat}(θ::Array{T}, θpre::Array{T}, v::T, vpre::T, opt::Options) =
     abs(v - vpre) < convert(T, opt.ftol) ||
     _l2diff(θ, θpre) < convert(T, opt.xtol)
 
 
 ### auxiliary functions
 
-function _sqrl2diff{T<:FloatingPoint}(x::StridedArray{T}, y::StridedArray{T})
+function _sqrl2diff{T<:AbstractFloat}(x::StridedArray{T}, y::StridedArray{T})
     @assert length(x) == length(y)
     s = zero(T)
     @inbounds for i = 1:length(x)
@@ -230,7 +230,7 @@ function _sqrl2diff{T<:FloatingPoint}(x::StridedArray{T}, y::StridedArray{T})
     return s
 end
 
-_l2diff{T<:FloatingPoint}(x::StridedArray{T}, y::StridedArray{T}) =
+_l2diff{T<:AbstractFloat}(x::StridedArray{T}, y::StridedArray{T}) =
     sqrt(_sqrl2diff(x, y))
 
 function _xmcy!{T<:Real}(r::Array{T}, x::Array{T}, c::T, y::Array{T})
