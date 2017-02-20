@@ -10,7 +10,7 @@ function _affmul(A::Matrix, x::VecOrMat, bias::Float64)
 	if ndims(x) == 1
 		A * x[1:d] + 2.0 * x[d+1]
 	else
-		A * x[1:d,:] .+ 2.0 * x[d+1,:]
+		A * x[1:d,:] .+ 2.0 * x[d+1,:]'
 	end
 end
 

@@ -288,8 +288,8 @@ function descent_dir!{T<:Real}(solver::LBFGS, t::Int, states::LBFGSStates{T}, p:
         h = min(t-1, m)
         for idx = t-1:-1:t-h
             i = mod1(idx, m)
-            α[i] = ρ[i] * dot(view(Δx,:,i), q)
-            axpy!(-α[i], view(Δg,:,i), q)
+            α[i] = ρ[i] * dot(Base.view(Δx,:,i), q)
+            axpy!(-α[i], Base.view(Δg,:,i), q)
         end
 
         # p <- q
@@ -298,8 +298,8 @@ function descent_dir!{T<:Real}(solver::LBFGS, t::Int, states::LBFGSStates{T}, p:
         # forward pass
         for idx = t-h:t-1
             i = mod1(idx, m)
-            β = ρ[i] * dot(view(Δg,:,i), p_)
-            axpy!(α[i] - β, p_, view(Δx, :, i))
+            β = ρ[i] * dot(Base.view(Δg,:,i), p_)
+            axpy!(α[i] - β, p_, Base.view(Δx, :, i))
         end
     else
         copy!(p, g)
