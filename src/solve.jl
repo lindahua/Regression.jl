@@ -13,14 +13,14 @@ function _solve{T<:AbstractFloat}(
     if has_bias(pb)
         rmodel = riskmodel(pred_with_bias(pb), loss(pb))
         f = RegRiskFun(rmodel, reg, inputs(pb), outputs(pb))
-        solve!(solver, f, θ, options, callback)
+        solve!(solver, f, θ, options, callback)::Solution{typeof(rmodel.predmodel),typeof(θ)}
 
     else
         rmodel = riskmodel(pred_without_bias(pb), loss(pb))
         f = RegRiskFun(rmodel, reg, inputs(pb), outputs(pb))
-        solve!(solver, f, θ, options, callback)
+        solve!(solver, f, θ, options, callback)::Solution{typeof(rmodel.predmodel),typeof(θ)}
 
-    end::Solution{typeof(θ)}
+    end
 end
 
 function solve{T<:AbstractFloat}(
@@ -110,7 +110,7 @@ function solve!{T<:AbstractFloat}(solver::DescentSolver,
         print_final(t, v, converged)
     end
 
-    return Solution(θ, v, t, converged)
+    return Solution(f.rmodel.predmodel, θ, v, t, converged)
 end
 
 

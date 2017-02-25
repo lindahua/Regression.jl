@@ -102,15 +102,21 @@ end
 
 ### Solution
 
-immutable Solution{Sol<:StridedArray}
+immutable Solution{PM<:PredictionModel,Sol<:StridedArray}
+    predmodel::PM
     sol::Sol
     fval::Float64
     niters::Int
     converged::Bool
 end
 
+function predict{S<:Solution, T<:BlasReal}(solution::S, X::StridedMatrix{T})
+    predict(solution.predmodel, solution.sol, X)
+end
+
 function Base.show(io::IO, r::Solution)
     println(io, "RiskMinSolution:")
+    println(io, "- predmodel: $(typeof(r.predmodel))")
     println(io, "- sol:       $(size(r.sol)) $(typeof(r.sol))")
     println(io, "- fval:      $(r.fval)")
     println(io, "- niters:    $(r.niters)")

@@ -31,6 +31,11 @@ function verify_solver(title, loss::Loss, data,
     b = dθ == dx ? 0.0 :
         dθ == dx + 1 ? 1.0 :
         error("Unmatched dimensions.")
+    pm = if ndims(θg) == 1
+        b == 1. ? AffinePred(dx, b) : LinearPred(dx)
+    else
+        b == 1. ? MvAffinePred(dx, size(θg,1), b) : MvLinearPred(dx, size(θg,1))
+    end
 
     pb = ndims(θg) == 1 ? UnivariateRegression(loss, data...; bias=b) :
                           MultivariateRegression(loss, data...; bias=b)
@@ -45,6 +50,7 @@ function verify_solver(title, loss::Loss, data,
 
         @test isa(ret, Regression.Solution)
         θe = ret.sol
+        @test predict(pm, θe, X) == predict(ret, X)
         @test vcond(θe, θg) < thres
     end
 end
