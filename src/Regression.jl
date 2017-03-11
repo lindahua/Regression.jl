@@ -1,7 +1,6 @@
 module Regression
 
 using Reexport
-using ArrayViews
 @reexport using EmpiricalRisks
 
 import Base.LinAlg: BlasReal, axpy!
