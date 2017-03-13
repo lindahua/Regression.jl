@@ -12,7 +12,7 @@ function augment_cols{T}(X::StridedMatrix{T}, v::T)
     m, n = size(X)
     Xa = Array(T, m+1, n)
     copy!(view(Xa, 1:m, :), X)
-    fill!(rowvec_view(Xa, m+1), v)
+    fill!(view(Xa, m+1, :), v)
     Xa
 end
 
